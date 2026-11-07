@@ -1,6 +1,6 @@
 # Yêu cầu sản phẩm: English for Kids
 
-Trạng thái: Đã xác nhận đến hết bước thiết kế màn hình  
+Trạng thái: Đã xác nhận phạm vi MVP
 Ngày cập nhật: 08/11/2026 (UTC+7)
 
 Tài liệu này là nguồn tham chiếu chính cho các quyết định sản phẩm đã được xác nhận. Không tự ý thay đổi các yêu cầu trong mục "Đã xác nhận"; mọi thay đổi mới phải được phụ huynh xác nhận trước.
@@ -22,7 +22,8 @@ Quy trình chính:
 ## 2. Đối tượng và nguyên tắc trải nghiệm
 
 - Phiên bản đầu dành cho một bé 5 tuổi.
-- Sử dụng trên điện thoại hoặc máy tính bảng.
+- Thiết bị mục tiêu chính của MVP là iPhone 14 Pro Max chạy iOS 17.
+- Giao diện vẫn cần thích ứng với điện thoại và máy tính bảng.
 - Ngôn ngữ hướng dẫn là tiếng Việt; ngôn ngữ bé học là tiếng Anh.
 - Hình ảnh và nút phải lớn, mỗi màn hình chỉ có một hành động chính.
 - Bé không cần tài khoản, mật khẩu hoặc PIN.
@@ -33,9 +34,12 @@ Quy trình chính:
 ## 3. Flashcard và chủ đề
 
 - Đầu vào chính là hình flashcard đã có từ tiếng Anh.
+- MVP nhận ảnh JPG và PNG; chưa nhận PDF hoặc Word.
 - Một lần tải có thể gồm một hoặc nhiều hình.
+- Mỗi lần phân tích hỗ trợ tối đa 20 flashcard.
 - Hệ thống giữ hình gốc, đọc từ tiếng Anh, đề xuất nghĩa tiếng Việt và nhận diện chủ đề.
 - Hệ thống phát hiện hình mờ, từ không chắc chắn và từ trùng.
+- Nếu bộ ảnh có nhiều chủ đề, hệ thống tự chia thành các chủ đề riêng để phụ huynh xác nhận.
 - Phụ huynh phải xác nhận từ vựng và chủ đề trước khi lưu.
 - Chủ đề được tự động lưu theo tháng thêm vào.
 - Phụ huynh có thể sửa từ, nghĩa, hình hoặc chủ đề trước khi xác nhận.
@@ -82,8 +86,8 @@ Mỗi chủ đề phải dạy đủ 100% từ đã được phụ huynh xác nh
 - Bé được chấm đúng/sai sau mỗi câu.
 - Một bài có thể trao tối đa ba sao:
   - Một sao khi hoàn thành.
-  - Một sao khi đạt từ 80% câu đúng.
-  - Một sao khi cần ít trợ giúp.
+  - Một sao khi đạt từ 80% câu đúng ngay lần chọn đầu.
+  - Một sao khi hệ thống không phải chỉ đáp án ở quá 20% số câu.
 - Sao thành tích chỉ nhận một lần cho cùng một bài để tránh lặp bài vô hạn nhằm lấy sao.
 - Học lại vẫn cập nhật tiến độ; bài ôn mới vẫn có thể trao sao.
 
@@ -155,12 +159,91 @@ Phản hồi đúng/sai, trạng thái xử lý, cảnh báo và xác nhận là
 - Không ghi API key vào mã nguồn, tài liệu, lịch sử Git hoặc log.
 - API key đã chia sẻ trong hội thoại phải được thu hồi và thay bằng key mới trước khi phát triển tính năng AI.
 - Key mới phải được lưu bằng biến môi trường hoặc hệ thống quản lý bí mật.
+- MVP cần Internet khi phân tích flashcard.
+- Bài đã lưu có thể tiếp tục học khi mất mạng, tùy khả năng phát âm có sẵn trên thiết bị.
 
-## 12. Chưa quyết định
+## 12. Phạm vi MVP đã xác nhận
+
+### Thiết lập và dữ liệu
+
+- Một hồ sơ bé, gồm tên và hình đại diện.
+- Dữ liệu được lưu trên thiết bị.
+- Không cần tài khoản, đăng nhập hoặc PIN.
+
+### Chủ đề được nhận diện
+
+1. Con vật.
+2. Đồ ăn và thức uống.
+3. Màu sắc.
+4. Số đếm.
+5. Hình dạng.
+6. Bộ phận cơ thể.
+7. Hành động.
+8. Cảm xúc.
+9. Vị trí.
+10. Đồ vật thông dụng.
+
+Từ không thuộc các nhóm trên được đưa vào chủ đề `Từ vựng tổng hợp` và dùng các bài tập phổ thông.
+
+### Dạng bài
+
+Các dạng dùng chung:
+
+- Xem và nghe flashcard.
+- Nghe tiếng Anh và chọn hình.
+- Ghép âm thanh với hình.
+- Tìm flashcard được yêu cầu.
+- Thử thách tổng hợp.
+
+Các dạng theo chủ đề:
+
+- Màu sắc: chọn đúng màu.
+- Số đếm: đếm và chọn số.
+- Hình dạng: tìm hoặc ghép hình.
+- Bộ phận cơ thể: chạm đúng vị trí.
+- Vị trí: kéo vật vào đúng vị trí.
+- Hành động và cảm xúc: chọn hình đúng.
+- Con vật, đồ ăn và đồ vật: tìm hình, ghép cặp hoặc phân loại.
+
+### Âm thanh
+
+- Đọc từ bằng tiếng Anh, mặc định giọng Anh–Mỹ.
+- Đọc hướng dẫn và nghĩa bằng tiếng Việt.
+- Có nút nghe lại.
+- Không chấm phát âm của bé trong MVP.
+
+### Ngoài phạm vi MVP
+
+- Nhiều hồ sơ bé.
+- Đồng bộ nhiều thiết bị.
+- Đăng nhập và sao lưu đám mây.
+- Đọc PDF hoặc Word.
+- Chấm phát âm hoặc nhận diện giọng nói.
+- Tạo hình bằng AI.
+- Báo cáo và biểu đồ phức tạp.
+- Thông báo nhắc học.
+- Xếp hạng hoặc thi đấu.
+- Bé tự tạo bài học.
+
+### Tiêu chuẩn hoàn thành MVP
+
+Với một bộ 10 flashcard, ứng dụng phải:
+
+1. Đọc và nhận diện được danh sách từ.
+2. Đề xuất chủ đề và nghĩa tiếng Việt.
+3. Cho phụ huynh sửa rồi xác nhận.
+4. Tạo lộ trình có đủ cả 10 từ.
+5. Phát âm tiếng Anh và hướng dẫn tiếng Việt.
+6. Chấm đúng/sai và trao sao.
+7. Lưu tiến độ khi đóng rồi mở lại.
+8. Đưa từ trả lời sai vào bài ôn.
+9. Cho phụ huynh chỉ định chủ đề ôn tập.
+10. Cho bé đề nghị đổi sao lấy quà.
+
+## 13. Chưa quyết định
 
 Các nội dung sau sẽ được xác nhận ở những bước tiếp theo:
 
-- Phạm vi chính xác của phiên bản đầu tiên.
 - Quy tắc chi tiết cho từng loại bài tập.
 - Điều kiện hoàn thành, mở khóa và học lại.
 - Mẫu giao diện trực quan của 10 màn hình.
