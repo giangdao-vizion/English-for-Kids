@@ -151,18 +151,22 @@ Chi tiết hạ tầng được lưu tại `docs/GOOGLE_CLOUD_SETUP.md`.
 
 ### Giai đoạn 10 — Mô hình dữ liệu và hợp đồng API
 
-Trạng thái: `Chưa bắt đầu`
+Trạng thái: `Đã xác nhận`
 
-Kết quả cần có:
+Kết quả:
 
 - Cấu trúc dữ liệu chủ đề, flashcard, bài tập và tiến độ.
 - Định dạng dữ liệu AI phải trả về.
-- Quy tắc kiểm tra dữ liệu và xử lý lỗi.
-- Cơ chế nâng cấp dữ liệu khi ứng dụng thay đổi.
+- Quy tắc kiểm tra confidence, dữ liệu không hợp lệ và xử lý lỗi.
+- Vòng đời ảnh gốc, ảnh tối ưu và thumbnail.
+- Cơ chế `schemaVersion` để nâng cấp dữ liệu.
+- Quy tắc sao lưu và khôi phục.
+
+Chi tiết được lưu tại `docs/DATA_MODEL.md`.
 
 ### Giai đoạn 11 — Lập kế hoạch triển khai
 
-Trạng thái: `Chưa bắt đầu`
+Trạng thái: `Bước tiếp theo`
 
 Kết quả cần có:
 

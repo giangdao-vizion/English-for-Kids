@@ -1,6 +1,6 @@
 # Yêu cầu sản phẩm: English for Kids
 
-Trạng thái: Đã xác nhận phạm vi MVP, logic học/ôn tập và cơ chế phân tích AI
+Trạng thái: Đã xác nhận phạm vi MVP, logic học/ôn tập, cơ chế AI và mô hình dữ liệu
 Ngày cập nhật: 08/11/2026 (UTC+7)
 
 Tài liệu này là nguồn tham chiếu chính cho các quyết định sản phẩm đã được xác nhận. Không tự ý thay đổi các yêu cầu trong mục "Đã xác nhận"; mọi thay đổi mới phải được phụ huynh xác nhận trước.
@@ -414,11 +414,38 @@ Câu tình huống, câu Yes/No và dữ liệu nâng cao nằm trong mục `Xem
 - API key chỉ nằm phía máy chủ, không đặt trong ứng dụng trên iPhone.
 - Không gửi thông tin cá nhân của bé cùng flashcard.
 
-## 15. Chưa quyết định
+## 15. Mô hình dữ liệu đã xác nhận
+
+Ứng dụng lưu riêng các nhóm dữ liệu:
+
+- Hồ sơ bé và cài đặt.
+- Lần phân tích flashcard.
+- Chủ đề.
+- Flashcard và hình ảnh.
+- Tiến độ từng từ.
+- Buổi học và từng câu trả lời.
+- Lịch ôn.
+- Sao, quà và yêu cầu đổi quà.
+
+Quy tắc:
+
+- Mục AI có độ chắc chắn dưới 80% phải được phụ huynh kiểm tra.
+- Dữ liệu AI nguyên bản chỉ giữ đến khi xác nhận; sau đó lưu bản đã chuẩn hóa.
+- Sau khi xác nhận, xóa ảnh gốc dung lượng lớn và giữ ảnh tối ưu cùng thumbnail.
+- Dữ liệu phụ huynh chỉnh sửa luôn có ưu tiên cao nhất.
+- Một ảnh có thể chứa nhiều flashcard; hệ thống lưu vị trí từng thẻ trong ảnh.
+- Tiến độ được tách khỏi nội dung flashcard để có thể học lại mà không mất dữ liệu.
+- Mỗi cấu trúc dữ liệu có phiên bản để hỗ trợ nâng cấp ứng dụng.
+- Nếu dữ liệu không đủ cho một dạng bài, hệ thống bỏ qua dạng đó thay vì gọi AI.
+
+Gemini chỉ trả dữ liệu theo cấu trúc bắt buộc. Ứng dụng tự tạo mã, tháng, tiến độ và câu hỏi từ dữ liệu đã xác nhận.
+
+Chi tiết kỹ thuật được lưu tại `docs/DATA_MODEL.md`.
+
+## 16. Chưa quyết định
 
 Các nội dung sau sẽ được xác nhận ở những bước tiếp theo:
 
 - Quy tắc chi tiết cho từng loại bài tập.
 - Mẫu giao diện trực quan của 10 màn hình.
-- Công nghệ triển khai và cơ chế lưu dữ liệu.
 - Sao lưu hoặc đồng bộ dữ liệu giữa nhiều thiết bị.
