@@ -7,7 +7,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['app-icon.svg'],
+      includeAssets: ['app-icon.svg', 'app-icon.png'],
       manifest: {
         name: 'English for Kids',
         short_name: 'English Kids',
@@ -16,14 +16,21 @@ export default defineConfig({
         background_color: '#fffdf7',
         display: 'standalone',
         orientation: 'portrait',
+        id: '/',
         start_url: '/',
         lang: 'vi',
         icons: [
           {
+            src: '/app-icon.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any',
+          },
+          {
             src: '/app-icon.svg',
             sizes: 'any',
             type: 'image/svg+xml',
-            purpose: 'any maskable',
+            purpose: 'any',
           },
         ],
       },

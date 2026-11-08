@@ -91,7 +91,9 @@ function App() {
             <span>Tên của bé</span>
             <input
               autoComplete="off"
+              id="child-name"
               maxLength={30}
+              name="childName"
               onChange={(event) => setName(event.target.value)}
               placeholder="Nhập tên của bé"
               value={name}

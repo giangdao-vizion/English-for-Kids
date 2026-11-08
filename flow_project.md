@@ -179,7 +179,7 @@ Chi tiết được lưu tại `docs/IMPLEMENTATION_PLAN.md`.
 
 ### Giai đoạn 12 — Xây dựng MVP
 
-Trạng thái: `Đang thực hiện — Giai đoạn 1 hoàn thành, Giai đoạn 2 tiếp theo`
+Trạng thái: `Đang thực hiện — Giai đoạn 1 hoàn thành, Giai đoạn 2 đang kiểm tra`
 
 Thứ tự dự kiến:
 
@@ -200,6 +200,8 @@ Kết quả Giai đoạn 1:
 - Đã xây màn hình thiết lập hồ sơ cùng trang chính cơ sở.
 - Đã kiểm tra dữ liệu hồ sơ tồn tại sau khi tải lại.
 - Build, typecheck, lint, kiểm thử và kiểm tra dependency production đều đạt.
+- Đã triển khai bản thử tại `https://english-for-kids-20261108.web.app`.
+- Đã thêm icon PNG để cài lên màn hình chính iPhone.
 
 ### Giai đoạn 13 — Kiểm thử
 

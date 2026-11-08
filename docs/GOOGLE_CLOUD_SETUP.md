@@ -13,6 +13,7 @@ Tài liệu này ghi lại cấu hình hạ tầng không chứa thông tin bí 
 - Cloud Run region mặc định: `us-central1`
 - Firebase state: `ACTIVE`
 - Firebase Hosting site: `english-for-kids-20261108`
+- Firebase Hosting URL: `https://english-for-kids-20261108.web.app`
 
 Project này được tạo riêng cho ứng dụng để không ảnh hưởng các project Google Cloud khác.
 
@@ -58,10 +59,12 @@ Một khóa tạm thời từng xuất hiện trong log khi cấu hình đã đ�
 - Tạo runtime service account.
 - Tạo và phân quyền Secret Manager.
 - Tạo khóa Gemini mới và lưu an toàn.
+- Triển khai bản PWA nền tảng đầu tiên lên Firebase Hosting.
+- Tạo icon PNG dành cho màn hình chính iPhone.
+- Thu hồi khóa service account tạm sau mỗi lần triển khai.
 
 Chưa thực hiện:
 
 - Chưa có mã backend để triển khai lên Cloud Run.
-- Chưa có bản PWA để triển khai lên Firebase Hosting.
 - Chưa cấu hình rate limit thực tế vì endpoint chưa được xây dựng.
 - Chưa kiểm thử lời gọi Gemini từ Cloud Run.
