@@ -15,7 +15,7 @@ type HomeScreenProps = {
   onOpenParent: () => void
 }
 
-const HOLD_MS = 3000
+const HOLD_MS = 1000
 
 export function HomeScreen({
   profile,
@@ -184,9 +184,9 @@ export function HomeScreen({
           <span aria-hidden="true">□</span>
         </button>
         <button
-          aria-label="Giữ 3 giây để mở khu vực phụ huynh"
+          aria-label="Giữ 1 giây để mở khu vực phụ huynh"
           className={`parent-hold-button ${holding ? 'holding' : ''}`}
-          title="Giữ 3 giây để mở khu vực phụ huynh"
+          title="Giữ 1 giây để mở khu vực phụ huynh"
           type="button"
           onPointerDown={startHold}
           onPointerUp={endHold}

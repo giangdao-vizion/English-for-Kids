@@ -19,6 +19,8 @@ export function ParentHomeScreen({
   onManageGifts,
   onSelectTopic,
 }: ParentHomeScreenProps) {
+  const activeTopic = topics.find((topic) => topic.id === activeTopicId)
+
   return (
     <main className="app-shell parent-screen">
       <header className="parent-header">
@@ -27,7 +29,7 @@ export function ParentHomeScreen({
         </button>
         <div className="parent-header-copy">
           <strong>Phụ huynh</strong>
-          <span>Quản lý bài học của bé</span>
+          <span>Chọn chủ đề rồi bấm Xong để về học</span>
         </div>
       </header>
 
@@ -70,6 +72,22 @@ export function ParentHomeScreen({
           )
         })}
       </section>
+
+      <footer className="parent-confirm-bar">
+        <p>
+          {activeTopic
+            ? `Đang chọn: ${activeTopic.nameEnglish}`
+            : 'Hãy chọn một chủ đề cho bé'}
+        </p>
+        <button
+          className="primary-button"
+          type="button"
+          disabled={!activeTopicId}
+          onClick={onBack}
+        >
+          Xong — về trang học
+        </button>
+      </footer>
     </main>
   )
 }

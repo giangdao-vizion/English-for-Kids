@@ -28,7 +28,7 @@ Quy trình chính:
 - Hình ảnh và nút phải lớn, mỗi màn hình chỉ có một hành động chính.
 - Bé không cần tài khoản, mật khẩu hoặc PIN.
 - Không có quảng cáo hoặc liên kết gây xao lãng.
-- Khu vực phụ huynh nằm ở một góc, hiển thị nhỏ và mở bằng thao tác giữ 3 giây.
+- Khu vực phụ huynh nằm ở một góc, hiển thị nhỏ và mở bằng thao tác giữ 1 giây.
 - Kho quà chỉ hiển thị bằng icon hộp quà nhỏ ở một góc của trang chính.
 
 ## 3. Flashcard và chủ đề

@@ -206,7 +206,8 @@ Kết quả Giai đoạn 1:
 - Chặng ôn trộn cuối chủ đề và chế độ Ôn tập chỉ dùng nghe và chọn (nhanh, tập trung nghe).
 - Các dạng còn lại trong thư viện MVP (ghép cặp, kéo thả, tìm hình theo chủ đề…) xếp sau MVP; hiện chưa bật trong chuỗi học.
 - TTS dùng Web Speech API; trên iPhone phải chạm nút ♪ (hoặc bắt đầu bài) để mở khóa âm thanh; Silent switch và volume ảnh hưởng phát tiếng.
-- Đã mở khu vực phụ huynh (giữ 3 giây), thêm flashcard JPG/PNG, gọi AI phân tích (Cloud Run + Gemini), phụ huynh chỉ xác nhận/sửa khi sai.
+- Đã mở khu vực phụ huynh (giữ 1 giây), thêm flashcard JPG/PNG, gọi AI phân tích (Cloud Run + Gemini), phụ huynh chỉ xác nhận/sửa khi sai.
+- Chọn chủ đề ở trang phụ huynh không tự thoát; phụ huynh bấm **Xong — về trang học** mới quay lại màn chính.
 - Đã có ôn tập, kho quà của bé, quản lý/duyệt quà phía phụ huynh.
 
 ### Giai đoạn 13 — Kiểm thử

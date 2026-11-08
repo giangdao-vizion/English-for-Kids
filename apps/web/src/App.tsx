@@ -358,7 +358,6 @@ function App() {
           void (async () => {
             await setActiveTopicId(topicId)
             await refreshSummary(topicId)
-            setScreen('home')
           })()
         }}
       />
