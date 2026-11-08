@@ -46,11 +46,10 @@ export const LESSON_INTROS: Record<Exclude<LessonPhase, 'result'>, LessonIntro> 
     },
   }
 
+/** Lời đúng/sai/khen bằng tiếng Anh để bé làm quen. */
 export const FEEDBACK_VOICE = {
-  correct: 'Chính xác! Giỏi lắm!',
-  retry: 'Chưa đúng. Con thử lại nhé.',
-  reveal: (word: string) => `Đáp án đúng là ${word}.`,
-  yes: 'Đúng rồi. Yes.',
-  no: 'Đúng rồi. No.',
-  wrongYesNo: (answer: 'Yes' | 'No') => `Chưa đúng. Đáp án là ${answer}.`,
+  correct: 'Great job!',
+  retry: 'Try again.',
+  reveal: (word: string) => `The answer is ${word}.`,
+  wrongYesNo: (answer: 'Yes' | 'No') => `The answer is ${answer}.`,
 } as const

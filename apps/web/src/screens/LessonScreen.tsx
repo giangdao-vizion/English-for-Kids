@@ -80,10 +80,7 @@ export function LessonScreen({
     if (progress.phase === 'flashcard') {
       const card = checkpointCards[progress.cardIndex]
       if (!card) return []
-      return [
-        { text: card.word, lang: 'en' },
-        { text: card.meaningVietnamese, lang: 'vi' },
-      ]
+      return [{ text: card.word, lang: 'en' }]
     }
     const target = checkpointCards[progress.questionIndex]
     if (!target) return []
@@ -284,17 +281,11 @@ function FlashcardStep({
         type="button"
         onClick={() => {
           if (nextCard) {
-            speakNow([
-              { text: nextCard.word, lang: 'en' },
-              { text: nextCard.meaningVietnamese, lang: 'vi' },
-            ])
+            speakNow({ text: nextCard.word, lang: 'en' })
             onNext()
             return
           }
-          speakNow({
-            text: LESSON_INTROS['listen-choose'].shortSpeak,
-            lang: 'vi',
-          })
+          // Chặng mới sẽ có màn chạm-để-nghe (tiếng Việt hướng dẫn).
           onNext()
         }}
       >
@@ -355,10 +346,7 @@ function ListenChooseStep({
       speakNow([...base, { text: nextTarget.word, lang: 'en' }])
       return
     }
-    speakNow([
-      ...base,
-      { text: LESSON_INTROS['choose-word'].shortSpeak, lang: 'vi' },
-    ])
+    speakNow(base)
   }
 
   function handleChoose(cardId: string) {
@@ -371,7 +359,7 @@ function ListenChooseStep({
     if (correct) {
       setFeedback(FEEDBACK_VOICE.correct)
       speakFollowUp([
-        { text: FEEDBACK_VOICE.correct, lang: 'vi' },
+        { text: FEEDBACK_VOICE.correct, lang: 'en' },
         { text: target.word, lang: 'en' },
       ])
       finish({
@@ -388,7 +376,7 @@ function ListenChooseStep({
       const revealText = FEEDBACK_VOICE.reveal(target.word)
       setFeedback(revealText)
       speakFollowUp([
-        { text: revealText, lang: 'vi' },
+        { text: revealText, lang: 'en' },
         { text: target.word, lang: 'en' },
       ])
       finish({
@@ -401,7 +389,7 @@ function ListenChooseStep({
     }
 
     setFeedback(FEEDBACK_VOICE.retry)
-    speakNow({ text: FEEDBACK_VOICE.retry, lang: 'vi' })
+    speakNow({ text: FEEDBACK_VOICE.retry, lang: 'en' })
   }
 
   return (
@@ -497,7 +485,7 @@ function ChooseWordStep({
       speakNow([...base, { text: nextTarget.word, lang: 'en' }])
       return
     }
-    speakNow([...base, { text: LESSON_INTROS['yes-no'].shortSpeak, lang: 'vi' }])
+    speakNow(base)
   }
 
   function handleChoose(word: string) {
@@ -510,7 +498,7 @@ function ChooseWordStep({
     if (correct) {
       setFeedback(FEEDBACK_VOICE.correct)
       speakFollowUp([
-        { text: FEEDBACK_VOICE.correct, lang: 'vi' },
+        { text: FEEDBACK_VOICE.correct, lang: 'en' },
         { text: target.word, lang: 'en' },
       ])
       window.setTimeout(() => {
@@ -529,7 +517,7 @@ function ChooseWordStep({
       const revealText = FEEDBACK_VOICE.reveal(target.word)
       setFeedback(revealText)
       speakFollowUp([
-        { text: revealText, lang: 'vi' },
+        { text: revealText, lang: 'en' },
         { text: target.word, lang: 'en' },
       ])
       window.setTimeout(() => {
@@ -544,7 +532,7 @@ function ChooseWordStep({
     }
 
     setFeedback(FEEDBACK_VOICE.retry)
-    speakNow({ text: FEEDBACK_VOICE.retry, lang: 'vi' })
+    speakNow({ text: FEEDBACK_VOICE.retry, lang: 'en' })
   }
 
   return (
@@ -635,11 +623,11 @@ function YesNoStep({
     const answerLabel = question.answerIsYes ? 'Yes' : 'No'
     const base: SpeakPart[] = correct
       ? [
-          { text: FEEDBACK_VOICE.correct, lang: 'vi' },
+          { text: FEEDBACK_VOICE.correct, lang: 'en' },
           { text: answerLabel, lang: 'en' },
         ]
       : [
-          { text: FEEDBACK_VOICE.wrongYesNo(answerLabel), lang: 'vi' },
+          { text: FEEDBACK_VOICE.wrongYesNo(answerLabel), lang: 'en' },
           { text: answerLabel, lang: 'en' },
         ]
     setFeedback(correct ? FEEDBACK_VOICE.correct : FEEDBACK_VOICE.wrongYesNo(answerLabel))
@@ -723,7 +711,7 @@ function AnswerStage({
       <p
         className={`lesson-feedback ${
           feedback
-            ? feedback.startsWith('Chính xác') || feedback.startsWith('Đúng')
+            ? feedback.startsWith('Great')
               ? 'ok'
               : 'retry'
             : 'idle'
