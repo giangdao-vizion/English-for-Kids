@@ -16,6 +16,11 @@ describe('exercise catalog', () => {
     expect(ids).not.toContain('count-choose')
   })
 
+  it('defines short speak lines for returning stage starts', async () => {
+    const { LESSON_INTROS } = await import('./intros')
+    expect(LESSON_INTROS['listen-choose'].shortSpeak.length).toBeGreaterThan(8)
+  })
+
   it('seeds only ready default exercises on a new topic', () => {
     const seeded = defaultConfigsForTopic('topic-1', 'animals')
     expect(seeded.map((item) => item.exerciseId)).toEqual([
