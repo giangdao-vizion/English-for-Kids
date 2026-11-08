@@ -152,11 +152,11 @@ export function AddFlashcardsScreen({
 
   return (
     <main className="app-shell parent-screen">
-      <header className="lesson-header compact">
+      <header className="parent-header">
         <button className="back-chip" type="button" onClick={onBack}>
           ‹
         </button>
-        <div>
+        <div className="parent-header-copy">
           <strong>Thêm flashcard</strong>
           <span>
             {phase === 'pick'
@@ -164,7 +164,6 @@ export function AddFlashcardsScreen({
               : `Đang kiểm tra ${usableCount} từ`}
           </span>
         </div>
-        <span />
       </header>
 
       {phase === 'pick' ? (

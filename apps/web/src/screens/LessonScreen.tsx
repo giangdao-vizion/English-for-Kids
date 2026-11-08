@@ -210,7 +210,7 @@ function ListenChooseStep({
   }
 
   return (
-    <main className="app-shell lesson-screen">
+    <main className="app-shell lesson-screen listen-screen">
       <LessonHeader
         title={topicName}
         subtitle={`Chặng ${checkpoint} · Nghe và chọn`}
@@ -219,7 +219,7 @@ function ListenChooseStep({
         onExit={onExit}
       />
 
-      <section className="prompt-panel">
+      <section className="prompt-panel compact-prompt">
         <button
           className="round-sound large"
           type="button"
@@ -231,40 +231,44 @@ function ListenChooseStep({
         <p>Chạm để nghe lại</p>
       </section>
 
-      <section className="choice-grid">
-        {question.choices.map((choice) => {
-          const selected = selectedId === choice.id
-          const isCorrect = choice.id === target.id
-          let stateClass = ''
-          if (selected && isCorrect) stateClass = 'correct'
-          if (selected && !isCorrect) stateClass = 'wrong'
-          if (revealed && isCorrect) stateClass = 'correct'
+      <section className="answer-stage" aria-live="polite">
+        <div className="choice-grid">
+          {question.choices.map((choice) => {
+            const selected = selectedId === choice.id
+            const isCorrect = choice.id === target.id
+            let stateClass = ''
+            if (selected && isCorrect) stateClass = 'correct'
+            if (selected && !isCorrect) stateClass = 'wrong'
+            if (revealed && isCorrect) stateClass = 'correct'
 
-          return (
-            <button
-              key={choice.id}
-              className={`choice-card ${stateClass}`}
-              type="button"
-              onClick={() => handleChoose(choice.id)}
-              disabled={revealed}
-            >
-              <CardVisual card={choice} size="choice" />
-              <strong>{choice.word}</strong>
-            </button>
-          )
-        })}
-      </section>
+            return (
+              <button
+                key={choice.id}
+                className={`choice-card ${stateClass}`}
+                type="button"
+                onClick={() => handleChoose(choice.id)}
+                disabled={revealed}
+              >
+                <CardVisual card={choice} size="choice" />
+                <strong>{choice.word}</strong>
+              </button>
+            )
+          })}
+        </div>
 
-      {feedback && (
         <p
           className={`lesson-feedback ${
-            feedback.startsWith('Chính xác') ? 'ok' : 'retry'
+            feedback
+              ? feedback.startsWith('Chính xác')
+                ? 'ok'
+                : 'retry'
+              : 'idle'
           }`}
           role="status"
         >
-          {feedback}
+          {feedback || '\u00a0'}
         </p>
-      )}
+      </section>
     </main>
   )
 }

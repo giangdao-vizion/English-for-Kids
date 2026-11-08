@@ -17,15 +17,14 @@ export function ParentHomeScreen({
 }: ParentHomeScreenProps) {
   return (
     <main className="app-shell parent-screen">
-      <header className="lesson-header compact">
+      <header className="parent-header">
         <button className="back-chip" type="button" onClick={onBack}>
           ‹
         </button>
-        <div>
+        <div className="parent-header-copy">
           <strong>Phụ huynh</strong>
           <span>Quản lý bài học của bé</span>
         </div>
-        <span />
       </header>
 
       <section className="parent-hero">
@@ -50,13 +49,15 @@ export function ParentHomeScreen({
               type="button"
               onClick={() => onSelectTopic(topic.id)}
             >
-              <div>
+              <div className="topic-row-copy">
                 <strong>{topic.nameEnglish}</strong>
                 <span>
                   {topic.nameVietnamese} · {topic.cardIds.length} từ
                 </span>
               </div>
-              <em>{active ? 'Đang dùng' : 'Chọn'}</em>
+              <span className="topic-row-status">
+                {active ? 'Đang dùng' : 'Chọn'}
+              </span>
             </button>
           )
         })}
