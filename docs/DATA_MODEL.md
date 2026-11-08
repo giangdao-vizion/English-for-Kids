@@ -235,7 +235,7 @@ type ExerciseConfig = VersionedRecord & {
   exerciseId: string;
   enabled: boolean;
   order: number;
-  source: "system_default" | "parent_override";
+  source: "system_default" | "parent_added";
 };
 ```
 

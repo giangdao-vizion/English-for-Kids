@@ -20,9 +20,12 @@ import {
   type LessonProgress,
 } from './lesson/engine'
 import {
+  addableExercisesForTopic,
   defaultConfigsForTopic,
-  exercisesForCategory,
+  exerciseFitsCategory,
+  getExerciseDefinition,
   isFlashcardEnabled,
+  isGradedExercise,
   resolveGradedPhases,
   type TopicExerciseConfig,
 } from './lesson/exercises'
@@ -323,6 +326,24 @@ export async function ensureAnimalsDemoTopic(): Promise<Topic> {
   return topic
 }
 
+function sortExerciseConfigs(
+  configs: TopicExerciseConfig[],
+): TopicExerciseConfig[] {
+  return [...configs].sort((left, right) => left.order - right.order)
+}
+
+function assertHasGradedExercise(configs: TopicExerciseConfig[]): void {
+  const graded = configs.filter(
+    (config) =>
+      config.enabled &&
+      getExerciseDefinition(config.exerciseId)?.implemented &&
+      isGradedExercise(config.exerciseId),
+  )
+  if (graded.length === 0) {
+    throw new Error('Cần giữ ít nhất một dạng bài có chấm điểm.')
+  }
+}
+
 export async function ensureExerciseConfigsForTopic(
   topic: Topic,
 ): Promise<TopicExerciseConfig[]> {
@@ -330,20 +351,31 @@ export async function ensureExerciseConfigsForTopic(
     .where('topicId')
     .equals(topic.id)
     .toArray()
-  const catalog = exercisesForCategory(topic.category)
-  if (existing.length >= catalog.length) {
-    return existing.sort((left, right) => left.order - right.order)
+
+  if (existing.length === 0) {
+    const seeded = defaultConfigsForTopic(topic.id, topic.category)
+    await db.exerciseConfigs.bulkPut(seeded)
+    return sortExerciseConfigs(seeded)
   }
 
-  const now = timestamp()
-  const byExercise = new Map(
-    existing.map((item) => [item.exerciseId, item]),
-  )
-  const next = defaultConfigsForTopic(topic.id, topic.category, now).map(
-    (config) => byExercise.get(config.exerciseId) ?? config,
-  )
-  await db.exerciseConfigs.bulkPut(next)
-  return next.sort((left, right) => left.order - right.order)
+  // Dọn các dạng "Sắp có" từng gắn mặc định; chỉ giữ bài sẵn sàng.
+  const stale = existing.filter((config) => {
+    const definition = getExerciseDefinition(config.exerciseId)
+    return !definition?.implemented
+  })
+  if (stale.length > 0) {
+    await db.exerciseConfigs.bulkDelete(stale.map((item) => item.id))
+  }
+  const ready = existing.filter((config) => {
+    const definition = getExerciseDefinition(config.exerciseId)
+    return Boolean(definition?.implemented)
+  })
+  if (ready.length === 0) {
+    const seeded = defaultConfigsForTopic(topic.id, topic.category)
+    await db.exerciseConfigs.bulkPut(seeded)
+    return sortExerciseConfigs(seeded)
+  }
+  return sortExerciseConfigs(ready)
 }
 
 export async function listExerciseConfigs(
@@ -367,52 +399,79 @@ export async function listAllExerciseConfigs(): Promise<
   return result
 }
 
-export async function setTopicExerciseEnabled(
+export async function addTopicExercise(
   topicId: string,
   exerciseId: string,
-  enabled: boolean,
+): Promise<TopicExerciseConfig[]> {
+  const topic = await db.topics.get(topicId)
+  if (!topic) {
+    throw new Error('Không tìm thấy chủ đề.')
+  }
+  const definition = getExerciseDefinition(exerciseId)
+  if (!definition?.implemented) {
+    throw new Error('Dạng bài này chưa sẵn sàng để thêm.')
+  }
+  if (!exerciseFitsCategory(exerciseId, topic.category)) {
+    throw new Error('Dạng bài không phù hợp với chủ đề này.')
+  }
+
+  const configs = await ensureExerciseConfigsForTopic(topic)
+  if (configs.some((config) => config.exerciseId === definition.id)) {
+    return configs
+  }
+
+  const now = timestamp()
+  const nextOrder =
+    configs.reduce((max, config) => Math.max(max, config.order), 0) + 1
+  const added: TopicExerciseConfig = {
+    id: `${topicId}__${definition.id}`,
+    topicId,
+    exerciseId: definition.id,
+    enabled: true,
+    order: nextOrder,
+    source: 'parent_added',
+    schemaVersion: 1,
+    createdAt: now,
+    updatedAt: now,
+  }
+  await db.exerciseConfigs.put(added)
+  return sortExerciseConfigs([...configs, added])
+}
+
+export async function removeTopicExercise(
+  topicId: string,
+  exerciseId: string,
 ): Promise<TopicExerciseConfig[]> {
   const topic = await db.topics.get(topicId)
   if (!topic) {
     throw new Error('Không tìm thấy chủ đề.')
   }
   const configs = await ensureExerciseConfigsForTopic(topic)
-  const definition = exercisesForCategory(topic.category).find(
-    (item) => item.id === exerciseId,
+  const normalized = exerciseId === 'listen-choose' ? 'listen-and-choose' : exerciseId
+  const remaining = configs.filter(
+    (config) => config.exerciseId !== normalized,
   )
-  if (!definition) {
-    throw new Error('Dạng bài không áp dụng cho chủ đề này.')
+  if (remaining.length === configs.length) {
+    return configs
   }
-  if (!definition.implemented && enabled) {
-    throw new Error('Dạng bài này chưa sẵn sàng.')
+  assertHasGradedExercise(remaining)
+  const target = configs.find((config) => config.exerciseId === normalized)
+  if (target) {
+    await db.exerciseConfigs.delete(target.id)
   }
+  return sortExerciseConfigs(remaining)
+}
 
-  const now = timestamp()
-  const next = configs.map((config) =>
-    config.exerciseId === exerciseId
-      ? {
-          ...config,
-          enabled,
-          source: 'parent_override' as const,
-          updatedAt: now,
-        }
-      : config,
+export async function listAddableExercises(topicId: string) {
+  const topic = await db.topics.get(topicId)
+  if (!topic) {
+    return []
+  }
+  const configs = await ensureExerciseConfigsForTopic(topic)
+  return addableExercisesForTopic(
+    topic.category,
+    configs.map((config) => config.exerciseId),
   )
-
-  // Luôn giữ ít nhất một dạng có chấm điểm đang bật.
-  const gradedEnabled = next.filter((config) => {
-    if (!config.enabled) return false
-    const def = exercisesForCategory(topic.category).find(
-      (item) => item.id === config.exerciseId,
-    )
-    return Boolean(def?.implemented && def.phase && def.phase !== 'flashcard')
-  })
-  if (gradedEnabled.length === 0) {
-    throw new Error('Cần bật ít nhất một dạng bài có chấm điểm.')
-  }
-
-  await db.exerciseConfigs.bulkPut(next)
-  return next
 }
 
 export async function getLessonExerciseOptions(topicId: string): Promise<{

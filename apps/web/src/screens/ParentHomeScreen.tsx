@@ -1,6 +1,8 @@
+import { useRef, useState } from 'react'
 import type { Topic } from '@english-for-kids/shared'
 import {
-  exercisesForCategory,
+  getExerciseDefinition,
+  type ExerciseDefinition,
   type TopicExerciseConfig,
 } from '../lesson/exercises'
 
@@ -12,13 +14,14 @@ type ParentHomeScreenProps = {
   onBack: () => void
   onAddFlashcards: () => void
   onManageGifts: () => void
+  onManageExercises: () => void
   onSelectTopic: (topicId: string) => void
-  onToggleExercise: (
-    topicId: string,
-    exerciseId: string,
-    enabled: boolean,
-  ) => void
+  onAddExercise: (topicId: string, exerciseId: string) => void
+  onRemoveExercise: (topicId: string, exerciseId: string) => void
+  onLoadAddable: (topicId: string) => Promise<ExerciseDefinition[]>
 }
+
+const SWIPE_DELETE_PX = 72
 
 export function ParentHomeScreen({
   topics,
@@ -28,10 +31,28 @@ export function ParentHomeScreen({
   onBack,
   onAddFlashcards,
   onManageGifts,
+  onManageExercises,
   onSelectTopic,
-  onToggleExercise,
+  onAddExercise,
+  onRemoveExercise,
+  onLoadAddable,
 }: ParentHomeScreenProps) {
   const activeTopic = topics.find((topic) => topic.id === activeTopicId)
+  const [expandedTopicId, setExpandedTopicId] = useState<string | null>(null)
+  const [pickerTopicId, setPickerTopicId] = useState<string | null>(null)
+  const [addable, setAddable] = useState<ExerciseDefinition[]>([])
+  const [pickerLoading, setPickerLoading] = useState(false)
+
+  async function openPicker(topicId: string) {
+    setPickerTopicId(topicId)
+    setPickerLoading(true)
+    try {
+      const items = await onLoadAddable(topicId)
+      setAddable(items)
+    } finally {
+      setPickerLoading(false)
+    }
+  }
 
   return (
     <main className="app-shell parent-screen">
@@ -51,6 +72,9 @@ export function ParentHomeScreen({
         <button className="primary-button" type="button" onClick={onAddFlashcards}>
           Thêm flashcard
         </button>
+        <button className="secondary-button" type="button" onClick={onManageExercises}>
+          Thư viện bài tập
+        </button>
         <button className="secondary-button" type="button" onClick={onManageGifts}>
           Quản lý quà
           {pendingRedeemCount > 0 ? ` (${pendingRedeemCount} chờ duyệt)` : ''}
@@ -65,7 +89,7 @@ export function ParentHomeScreen({
         {topics.map((topic) => {
           const active = topic.id === activeTopicId
           const configs = exerciseConfigsByTopic[topic.id] ?? []
-          const catalog = exercisesForCategory(topic.category)
+          const expanded = expandedTopicId === topic.id
 
           return (
             <article
@@ -88,42 +112,56 @@ export function ParentHomeScreen({
                 </span>
               </button>
 
-              <div className="topic-exercise-list" aria-label={`Bài tập ${topic.nameEnglish}`}>
-                <p className="topic-exercise-label">Bài tập áp dụng</p>
-                {catalog.map((exercise) => {
-                  const config = configs.find(
-                    (item) => item.exerciseId === exercise.id,
+              <button
+                className={`topic-exercise-toggle ${expanded ? 'open' : ''}`}
+                type="button"
+                aria-expanded={expanded}
+                onClick={() =>
+                  setExpandedTopicId((current) =>
+                    current === topic.id ? null : topic.id,
                   )
-                  const enabled = config?.enabled ?? false
-                  return (
-                    <label
-                      key={exercise.id}
-                      className={`exercise-toggle ${exercise.implemented ? '' : 'soon'}`}
-                    >
-                      <span className="exercise-toggle-copy">
-                        <strong>{exercise.nameVietnamese}</strong>
-                        <small>
-                          {exercise.implemented
-                            ? exercise.nameEnglish
-                            : 'Sắp có'}
-                        </small>
-                      </span>
-                      <input
-                        type="checkbox"
-                        checked={enabled}
-                        disabled={!exercise.implemented}
-                        onChange={(event) =>
-                          onToggleExercise(
-                            topic.id,
-                            exercise.id,
-                            event.target.checked,
-                          )
+                }
+              >
+                <span>
+                  Bài tập · {configs.length}
+                  {!expanded ? ' · chạm để mở' : ''}
+                </span>
+                <span aria-hidden="true">{expanded ? '▾' : '▸'}</span>
+              </button>
+
+              {expanded && (
+                <div
+                  className="topic-exercise-list"
+                  aria-label={`Bài tập ${topic.nameEnglish}`}
+                >
+                  {configs.length === 0 && (
+                    <p className="topic-exercise-empty">
+                      Chưa có bài tập. Thêm từ thư viện.
+                    </p>
+                  )}
+                  {configs.map((config) => {
+                    const definition = getExerciseDefinition(config.exerciseId)
+                    if (!definition) return null
+                    return (
+                      <SwipeExerciseRow
+                        key={config.id}
+                        title={definition.nameVietnamese}
+                        subtitle={definition.nameEnglish}
+                        onDelete={() =>
+                          onRemoveExercise(topic.id, config.exerciseId)
                         }
                       />
-                    </label>
-                  )
-                })}
-              </div>
+                    )
+                  })}
+                  <button
+                    className="add-exercise-button"
+                    type="button"
+                    onClick={() => void openPicker(topic.id)}
+                  >
+                    + Thêm bài tập
+                  </button>
+                </div>
+              )}
             </article>
           )
         })}
@@ -144,6 +182,115 @@ export function ParentHomeScreen({
           Xong — về trang học
         </button>
       </footer>
+
+      {pickerTopicId && (
+        <div className="exercise-picker-backdrop" role="presentation">
+          <div
+            className="exercise-picker-sheet"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Thêm bài tập"
+          >
+            <div className="exercise-picker-header">
+              <strong>Thêm từ thư viện</strong>
+              <button
+                className="ghost-sound"
+                type="button"
+                onClick={() => setPickerTopicId(null)}
+              >
+                Đóng
+              </button>
+            </div>
+            {pickerLoading && <p className="topic-exercise-empty">Đang tải…</p>}
+            {!pickerLoading && addable.length === 0 && (
+              <p className="topic-exercise-empty">
+                Không còn dạng bài sẵn sàng để thêm cho chủ đề này.
+              </p>
+            )}
+            {!pickerLoading &&
+              addable.map((exercise) => (
+                <button
+                  key={exercise.id}
+                  className="exercise-picker-item"
+                  type="button"
+                  onClick={() => {
+                    onAddExercise(pickerTopicId, exercise.id)
+                    setPickerTopicId(null)
+                  }}
+                >
+                  <span className="exercise-toggle-copy">
+                    <strong>{exercise.nameVietnamese}</strong>
+                    <small>{exercise.descriptionVietnamese}</small>
+                  </span>
+                  <span className="library-badge ready">Thêm</span>
+                </button>
+              ))}
+          </div>
+        </div>
+      )}
     </main>
+  )
+}
+
+function SwipeExerciseRow({
+  title,
+  subtitle,
+  onDelete,
+}: {
+  title: string
+  subtitle: string
+  onDelete: () => void
+}) {
+  const startX = useRef(0)
+  const currentX = useRef(0)
+  const [offset, setOffset] = useState(0)
+  const [dragging, setDragging] = useState(false)
+
+  function clamp(value: number) {
+    return Math.max(-SWIPE_DELETE_PX, Math.min(0, value))
+  }
+
+  return (
+    <div className="swipe-row">
+      <button
+        className="swipe-delete-action"
+        type="button"
+        aria-label={`Xoá ${title}`}
+        onClick={onDelete}
+      >
+        Xoá
+      </button>
+      <div
+        className={`swipe-row-front ${dragging ? 'dragging' : ''}`}
+        style={{ transform: `translateX(${offset}px)` }}
+        onPointerDown={(event) => {
+          startX.current = event.clientX
+          currentX.current = offset
+          setDragging(true)
+          event.currentTarget.setPointerCapture(event.pointerId)
+        }}
+        onPointerMove={(event) => {
+          if (!dragging) return
+          const delta = event.clientX - startX.current
+          setOffset(clamp(currentX.current + delta))
+        }}
+        onPointerUp={() => {
+          setDragging(false)
+          setOffset((value) => (value < -SWIPE_DELETE_PX / 2 ? -SWIPE_DELETE_PX : 0))
+        }}
+        onPointerCancel={() => {
+          setDragging(false)
+          setOffset(0)
+        }}
+      >
+        <div className="exercise-toggle-copy">
+          <strong>{title}</strong>
+          <small>{subtitle}</small>
+        </div>
+        <span className="swipe-hint" aria-hidden="true">
+          ‹
+        </span>
+      </div>
+    </div>
   )
 }

@@ -2,21 +2,23 @@ import { useEffect, useState } from 'react'
 import type { ChildProfile, Topic } from '@english-for-kids/shared'
 import './app.css'
 import {
+  addTopicExercise,
   confirmFlashcardBatch,
   createProfile,
   getLessonExerciseOptions,
+  listAddableExercises,
   listAllExerciseConfigs,
   listGifts,
   listPendingRedeems,
   loadOrStartLesson,
   loadProfile,
   loadTopicSummary,
+  removeTopicExercise,
   requestRedeem,
   resolveRedeem,
   restartLesson,
   saveLessonProgress,
   setActiveTopicId,
-  setTopicExerciseEnabled,
   startReviewLesson,
   upsertGift,
   type GiftItem,
@@ -36,6 +38,7 @@ import { AddFlashcardsScreen } from './screens/AddFlashcardsScreen'
 import { GiftShopScreen } from './screens/GiftShopScreen'
 import { HomeScreen } from './screens/HomeScreen'
 import { LessonScreen } from './screens/LessonScreen'
+import { ParentExerciseLibraryScreen } from './screens/ParentExerciseLibraryScreen'
 import { ParentGiftsScreen } from './screens/ParentGiftsScreen'
 import { ParentHomeScreen } from './screens/ParentHomeScreen'
 import { ResultScreen } from './screens/ResultScreen'
@@ -48,6 +51,7 @@ type Screen =
   | 'parent-home'
   | 'parent-add'
   | 'parent-gifts'
+  | 'parent-exercises'
   | 'gifts'
 
 function normalizeProgress(progress: LessonProgress): LessonProgress {
@@ -363,6 +367,14 @@ function App() {
     )
   }
 
+  if (screen === 'parent-exercises') {
+    return (
+      <ParentExerciseLibraryScreen
+        onBack={() => setScreen('parent-home')}
+      />
+    )
+  }
+
   if (screen === 'parent-home') {
     return (
       <>
@@ -377,21 +389,18 @@ function App() {
           }}
           onAddFlashcards={() => setScreen('parent-add')}
           onManageGifts={() => setScreen('parent-gifts')}
+          onManageExercises={() => setScreen('parent-exercises')}
           onSelectTopic={(topicId) => {
             void (async () => {
               await setActiveTopicId(topicId)
               await refreshSummary(topicId)
             })()
           }}
-          onToggleExercise={(topicId, exerciseId, enabled) => {
+          onAddExercise={(topicId, exerciseId) => {
             void (async () => {
               try {
                 setError('')
-                const next = await setTopicExerciseEnabled(
-                  topicId,
-                  exerciseId,
-                  enabled,
-                )
+                const next = await addTopicExercise(topicId, exerciseId)
                 setExerciseConfigsByTopic((previous) => ({
                   ...previous,
                   [topicId]: next,
@@ -400,11 +409,30 @@ function App() {
                 setError(
                   caught instanceof Error
                     ? caught.message
-                    : 'Không thể cập nhật dạng bài.',
+                    : 'Không thể thêm dạng bài.',
                 )
               }
             })()
           }}
+          onRemoveExercise={(topicId, exerciseId) => {
+            void (async () => {
+              try {
+                setError('')
+                const next = await removeTopicExercise(topicId, exerciseId)
+                setExerciseConfigsByTopic((previous) => ({
+                  ...previous,
+                  [topicId]: next,
+                }))
+              } catch (caught) {
+                setError(
+                  caught instanceof Error
+                    ? caught.message
+                    : 'Không thể xoá dạng bài.',
+                )
+              }
+            })()
+          }}
+          onLoadAddable={async (topicId) => listAddableExercises(topicId)}
         />
         {error && (
           <p className="error-message floating-error" role="alert">
