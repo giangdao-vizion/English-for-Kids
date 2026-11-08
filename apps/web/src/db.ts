@@ -399,6 +399,45 @@ export async function listAllExerciseConfigs(): Promise<
   return result
 }
 
+export async function setTopicExerciseEnabled(
+  topicId: string,
+  exerciseId: string,
+  enabled: boolean,
+): Promise<TopicExerciseConfig[]> {
+  const topic = await db.topics.get(topicId)
+  if (!topic) {
+    throw new Error('Không tìm thấy chủ đề.')
+  }
+  const definition = getExerciseDefinition(exerciseId)
+  if (!definition?.implemented) {
+    throw new Error('Dạng bài này chưa sẵn sàng.')
+  }
+
+  const configs = await ensureExerciseConfigsForTopic(topic)
+  const normalized = normalizeExerciseId(exerciseId)
+  if (!configs.some((config) => config.exerciseId === normalized)) {
+    throw new Error('Dạng bài chưa được gắn vào chủ đề.')
+  }
+
+  const now = timestamp()
+  const next = configs.map((config) =>
+    config.exerciseId === normalized
+      ? {
+          ...config,
+          enabled,
+          updatedAt: now,
+        }
+      : config,
+  )
+  assertHasGradedExercise(next)
+  await db.exerciseConfigs.bulkPut(next)
+  return sortExerciseConfigs(next)
+}
+
+function normalizeExerciseId(exerciseId: string): string {
+  return exerciseId === 'listen-choose' ? 'listen-and-choose' : exerciseId
+}
+
 export async function addTopicExercise(
   topicId: string,
   exerciseId: string,
@@ -447,7 +486,7 @@ export async function removeTopicExercise(
     throw new Error('Không tìm thấy chủ đề.')
   }
   const configs = await ensureExerciseConfigsForTopic(topic)
-  const normalized = exerciseId === 'listen-choose' ? 'listen-and-choose' : exerciseId
+  const normalized = normalizeExerciseId(exerciseId)
   const remaining = configs.filter(
     (config) => config.exerciseId !== normalized,
   )

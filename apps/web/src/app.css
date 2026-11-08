@@ -1120,9 +1120,38 @@
   transition: none;
 }
 
-.swipe-hint {
-  color: #c0c5d4;
-  font-size: 16px;
+.swipe-row-front.off {
+  background: #f7f8fc;
+}
+
+.swipe-row-front.off .exercise-toggle-copy strong,
+.swipe-row-front.off .exercise-toggle-copy small {
+  color: #9aa1b5;
+}
+
+.exercise-enable {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+}
+
+.exercise-enable input {
+  width: 20px;
+  height: 20px;
+  accent-color: #4f6de8;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .add-exercise-button {

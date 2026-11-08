@@ -19,6 +19,7 @@ import {
   restartLesson,
   saveLessonProgress,
   setActiveTopicId,
+  setTopicExerciseEnabled,
   startReviewLesson,
   upsertGift,
   type GiftItem,
@@ -394,6 +395,28 @@ function App() {
             void (async () => {
               await setActiveTopicId(topicId)
               await refreshSummary(topicId)
+            })()
+          }}
+          onToggleExercise={(topicId, exerciseId, enabled) => {
+            void (async () => {
+              try {
+                setError('')
+                const next = await setTopicExerciseEnabled(
+                  topicId,
+                  exerciseId,
+                  enabled,
+                )
+                setExerciseConfigsByTopic((previous) => ({
+                  ...previous,
+                  [topicId]: next,
+                }))
+              } catch (caught) {
+                setError(
+                  caught instanceof Error
+                    ? caught.message
+                    : 'Không thể cập nhật dạng bài.',
+                )
+              }
             })()
           }}
           onAddExercise={(topicId, exerciseId) => {

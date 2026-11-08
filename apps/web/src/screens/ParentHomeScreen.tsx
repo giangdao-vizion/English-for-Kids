@@ -16,6 +16,11 @@ type ParentHomeScreenProps = {
   onManageGifts: () => void
   onManageExercises: () => void
   onSelectTopic: (topicId: string) => void
+  onToggleExercise: (
+    topicId: string,
+    exerciseId: string,
+    enabled: boolean,
+  ) => void
   onAddExercise: (topicId: string, exerciseId: string) => void
   onRemoveExercise: (topicId: string, exerciseId: string) => void
   onLoadAddable: (topicId: string) => Promise<ExerciseDefinition[]>
@@ -33,6 +38,7 @@ export function ParentHomeScreen({
   onManageGifts,
   onManageExercises,
   onSelectTopic,
+  onToggleExercise,
   onAddExercise,
   onRemoveExercise,
   onLoadAddable,
@@ -166,7 +172,8 @@ export function ParentHomeScreen({
                 }
               >
                 <span>
-                  Bài tập · {configs.length}
+                  Bài tập · {configs.filter((item) => item.enabled).length}/
+                  {configs.length}
                   {!expanded ? ' · chạm để mở' : ''}
                 </span>
                 <span aria-hidden="true">{expanded ? '▾' : '▸'}</span>
@@ -190,6 +197,14 @@ export function ParentHomeScreen({
                         key={config.id}
                         title={definition.nameVietnamese}
                         subtitle={definition.nameEnglish}
+                        enabled={config.enabled}
+                        onToggle={(enabled) =>
+                          onToggleExercise(
+                            topic.id,
+                            config.exerciseId,
+                            enabled,
+                          )
+                        }
                         onDelete={() =>
                           onRemoveExercise(topic.id, config.exerciseId)
                         }
@@ -278,10 +293,14 @@ export function ParentHomeScreen({
 function SwipeExerciseRow({
   title,
   subtitle,
+  enabled,
+  onToggle,
   onDelete,
 }: {
   title: string
   subtitle: string
+  enabled: boolean
+  onToggle: (enabled: boolean) => void
   onDelete: () => void
 }) {
   const startX = useRef(0)
@@ -304,9 +323,11 @@ function SwipeExerciseRow({
         Xoá
       </button>
       <div
-        className={`swipe-row-front ${dragging ? 'dragging' : ''}`}
+        className={`swipe-row-front ${dragging ? 'dragging' : ''} ${enabled ? '' : 'off'}`}
         style={{ transform: `translateX(${offset}px)` }}
         onPointerDown={(event) => {
+          const target = event.target as HTMLElement
+          if (target.closest('input, label')) return
           startX.current = event.clientX
           currentX.current = offset
           setDragging(true)
@@ -330,9 +351,14 @@ function SwipeExerciseRow({
           <strong>{title}</strong>
           <small>{subtitle}</small>
         </div>
-        <span className="swipe-hint" aria-hidden="true">
-          ‹
-        </span>
+        <label className="exercise-enable" onClick={(event) => event.stopPropagation()}>
+          <span className="visually-hidden">Áp dụng {title}</span>
+          <input
+            type="checkbox"
+            checked={enabled}
+            onChange={(event) => onToggle(event.target.checked)}
+          />
+        </label>
       </div>
     </div>
   )
