@@ -1,10 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { TopicCategory } from '@english-for-kids/shared'
-import {
-  colorForWord,
-  guessWordFromFilename,
-  optimizeImageFile,
-} from '../images'
+import { analyzeFlashcards, blobToBase64 } from '../parent/analyze'
+import { colorForWord, optimizeImageFile } from '../images'
 import type { DraftFlashcard } from '../db'
 
 type AddFlashcardsScreenProps = {
@@ -22,6 +19,11 @@ const CATEGORY_OPTIONS: Array<[TopicCategory, string]> = [
   ['food_drinks', 'Đồ ăn'],
   ['objects', 'Đồ vật'],
   ['colors', 'Màu sắc'],
+  ['numbers', 'Số đếm'],
+  ['shapes', 'Hình dạng'],
+  ['body_parts', 'Cơ thể'],
+  ['actions', 'Hành động'],
+  ['emotions', 'Cảm xúc'],
   ['general', 'Chung'],
 ]
 
@@ -35,7 +37,8 @@ export function AddFlashcardsScreen({
   const [category, setCategory] = useState<TopicCategory>('general')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  const [phase, setPhase] = useState<'pick' | 'review'>('pick')
+  const [info, setInfo] = useState('')
+  const [phase, setPhase] = useState<'pick' | 'analyzing' | 'review'>('pick')
 
   useEffect(() => {
     return () => {
@@ -62,7 +65,9 @@ export function AddFlashcardsScreen({
     }
 
     setError('')
+    setInfo('')
     setBusy(true)
+    setPhase('analyzing')
     try {
       const selected = [...fileList].slice(0, 20)
       if (fileList.length > 20) {
@@ -70,19 +75,24 @@ export function AddFlashcardsScreen({
       }
 
       const nextDrafts: DraftFlashcard[] = []
+      const analyzeInputs = []
       for (const file of selected) {
         const imageId = `img-${crypto.randomUUID()}`
         const image = await optimizeImageFile(file, imageId)
         const previewUrl = URL.createObjectURL(image.blob)
-        const word = guessWordFromFilename(file.name)
         nextDrafts.push({
           localId: crypto.randomUUID(),
           fileName: file.name,
           previewUrl,
           image,
-          word,
+          word: '',
           meaningVietnamese: '',
           removed: false,
+        })
+        analyzeInputs.push({
+          fileName: file.name,
+          mimeType: image.mimeType,
+          base64: await blobToBase64(image.blob),
         })
       }
 
@@ -93,17 +103,48 @@ export function AddFlashcardsScreen({
         return nextDrafts
       })
 
-      if (!topicNameEnglish && nextDrafts[0]?.word) {
-        setTopicNameEnglish('My Flashcards')
-        setTopicNameVietnamese('Flashcard của bé')
+      const result = await analyzeFlashcards(analyzeInputs)
+      const topic = result.analysis.topics[0]
+      if (!topic) {
+        throw new Error('AI không trả về chủ đề nào.')
+      }
+
+      setTopicNameEnglish(topic.nameEnglish)
+      setTopicNameVietnamese(topic.nameVietnamese)
+      setCategory(topic.category)
+
+      setDrafts((current) =>
+        current.map((draft, index) => {
+          const card =
+            topic.cards.find((item) => item.sourceImageIndex === index) ||
+            topic.cards[index]
+          return {
+            ...draft,
+            word: card?.word || card?.normalizedWord || '',
+            meaningVietnamese: card?.meaningVietnamese || '',
+          }
+        }),
+      )
+
+      if (result.warning) {
+        setInfo(result.warning)
+      } else {
+        setInfo('AI đã điền sẵn. Ba mẹ chỉ cần xem và xác nhận.')
       }
       setPhase('review')
     } catch (caught) {
       setError(
         caught instanceof Error
           ? caught.message
-          : 'Không thể đọc ảnh. Hãy thử lại.',
+          : 'Không thể phân tích ảnh. Hãy thử lại.',
       )
+      setPhase('pick')
+      setDrafts((current) => {
+        for (const draft of current) {
+          URL.revokeObjectURL(draft.previewUrl)
+        }
+        return []
+      })
     } finally {
       setBusy(false)
     }
@@ -159,22 +200,22 @@ export function AddFlashcardsScreen({
         <div className="parent-header-copy">
           <strong>Thêm flashcard</strong>
           <span>
-            {phase === 'pick'
-              ? 'Chọn ảnh để tạo bài'
-              : `Đang kiểm tra ${usableCount} từ`}
+            {phase === 'pick' && 'Chọn ảnh để AI phân tích'}
+            {phase === 'analyzing' && 'AI đang phân tích…'}
+            {phase === 'review' && `Xác nhận ${usableCount} từ`}
           </span>
         </div>
       </header>
 
-      {phase === 'pick' ? (
+      {phase === 'pick' && (
         <section className="upload-panel">
           <div className="upload-art" aria-hidden="true">
             <span style={{ background: colorForWord('flash') }}>Aa</span>
           </div>
           <h1>Chọn ảnh flashcard</h1>
-          <p>JPG hoặc PNG, tối đa 20 ảnh. Tên file nên là từ tiếng Anh.</p>
+          <p>JPG hoặc PNG, tối đa 20 ảnh. AI sẽ điền từ, nghĩa và chủ đề.</p>
           <label className="primary-button upload-button">
-            {busy ? 'Đang xử lý…' : 'Chọn ảnh từ thư viện'}
+            <span className="upload-button-label">Chọn ảnh từ thư viện</span>
             <input
               accept="image/jpeg,image/png,image/webp"
               disabled={busy}
@@ -187,15 +228,25 @@ export function AddFlashcardsScreen({
             />
           </label>
         </section>
-      ) : (
+      )}
+
+      {phase === 'analyzing' && (
+        <section className="analyzing-panel" aria-live="polite">
+          <div className="loading-dot" />
+          <h1>AI đang làm giúp ba mẹ</h1>
+          <p>Nhận diện từ, nghĩa tiếng Việt và chủ đề. Chỉ cần xác nhận sau đó.</p>
+        </section>
+      )}
+
+      {phase === 'review' && (
         <>
+          {info && <p className="info-banner">{info}</p>}
           <section className="confirm-meta">
             <label>
               <span>Tên chủ đề (English)</span>
               <input
                 value={topicNameEnglish}
                 onChange={(event) => setTopicNameEnglish(event.target.value)}
-                placeholder="Animals"
               />
             </label>
             <label>
@@ -203,7 +254,6 @@ export function AddFlashcardsScreen({
               <input
                 value={topicNameVietnamese}
                 onChange={(event) => setTopicNameVietnamese(event.target.value)}
-                placeholder="Động vật"
               />
             </label>
             <label>
@@ -253,7 +303,6 @@ export function AddFlashcardsScreen({
                           meaningVietnamese: event.target.value,
                         })
                       }
-                      placeholder="Nhập nghĩa"
                     />
                   </label>
                   <button
@@ -289,6 +338,7 @@ export function AddFlashcardsScreen({
               disabled={busy}
               onClick={() => {
                 setPhase('pick')
+                setInfo('')
                 setDrafts((current) => {
                   for (const draft of current) {
                     URL.revokeObjectURL(draft.previewUrl)

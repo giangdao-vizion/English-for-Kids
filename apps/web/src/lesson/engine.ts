@@ -5,6 +5,8 @@ export type Checkpoint = number
 
 export type LessonProgress = {
   topicId: string
+  sessionId: string
+  mode: 'learn' | 'review'
   checkpoint: Checkpoint
   phase: LessonPhase
   cardIndex: number
@@ -25,9 +27,14 @@ export type ChoiceQuestion = {
 
 export const WORDS_PER_CHECKPOINT = 5
 
-export function createInitialProgress(topicId: string): LessonProgress {
+export function createInitialProgress(
+  topicId: string,
+  mode: 'learn' | 'review' = 'learn',
+): LessonProgress {
   return {
     topicId,
+    sessionId: mode === 'review' ? `review-${topicId}` : `lesson-${topicId}`,
+    mode,
     checkpoint: 1,
     phase: 'flashcard',
     cardIndex: 0,

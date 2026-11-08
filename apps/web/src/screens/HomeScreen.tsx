@@ -10,6 +10,8 @@ type HomeScreenProps = {
   topicCompleted: boolean
   onContinue: () => void
   onRestart: () => void
+  onReview: () => void
+  onOpenGifts: () => void
   onOpenParent: () => void
 }
 
@@ -24,6 +26,8 @@ export function HomeScreen({
   topicCompleted,
   onContinue,
   onRestart,
+  onReview,
+  onOpenGifts,
   onOpenParent,
 }: HomeScreenProps) {
   const holdTimer = useRef<number | null>(null)
@@ -165,15 +169,18 @@ export function HomeScreen({
             Học lại
           </button>
         )}
-        {!topicCompleted && (
-          <button className="secondary-button" type="button" disabled>
-            Ôn tập
-          </button>
-        )}
+        <button className="secondary-button" type="button" onClick={onReview}>
+          Ôn tập
+        </button>
       </section>
 
       <footer className="home-footer">
-        <button aria-label="Kho quà" className="corner-button" type="button">
+        <button
+          aria-label="Kho quà"
+          className="corner-button"
+          type="button"
+          onClick={onOpenGifts}
+        >
           <span aria-hidden="true">□</span>
         </button>
         <button

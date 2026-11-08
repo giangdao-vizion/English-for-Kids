@@ -3,16 +3,20 @@ import type { Topic } from '@english-for-kids/shared'
 type ParentHomeScreenProps = {
   topics: Topic[]
   activeTopicId: string
+  pendingRedeemCount: number
   onBack: () => void
   onAddFlashcards: () => void
+  onManageGifts: () => void
   onSelectTopic: (topicId: string) => void
 }
 
 export function ParentHomeScreen({
   topics,
   activeTopicId,
+  pendingRedeemCount,
   onBack,
   onAddFlashcards,
+  onManageGifts,
   onSelectTopic,
 }: ParentHomeScreenProps) {
   return (
@@ -29,9 +33,13 @@ export function ParentHomeScreen({
 
       <section className="parent-hero">
         <h1>Thêm flashcard</h1>
-        <p>Chọn ảnh JPG/PNG, kiểm tra từ và nghĩa, rồi giao bài cho bé.</p>
+        <p>Chọn ảnh, AI phân tích giúp, ba mẹ chỉ xác nhận rồi giao bài.</p>
         <button className="primary-button" type="button" onClick={onAddFlashcards}>
           Thêm flashcard
+        </button>
+        <button className="secondary-button" type="button" onClick={onManageGifts}>
+          Quản lý quà
+          {pendingRedeemCount > 0 ? ` (${pendingRedeemCount} chờ duyệt)` : ''}
         </button>
       </section>
 
@@ -62,11 +70,6 @@ export function ParentHomeScreen({
           )
         })}
       </section>
-
-      <p className="parent-note">
-        Bản thử này dùng nhập thủ công / giả lập AI. Phân tích Gemini sẽ nối ở
-        giai đoạn sau.
-      </p>
     </main>
   )
 }

@@ -62,7 +62,7 @@ describe('lesson engine', () => {
   it('completes the topic after the final checkpoint', () => {
     const progress = advanceAfterQuestion(
       {
-        ...createInitialProgress('topic-animals-demo'),
+        ...createInitialProgress('topic-animals-demo', 'learn'),
         checkpoint: 3,
         phase: 'listen-choose',
         questionIndex: 9,

@@ -4,12 +4,20 @@ import './app.css'
 import {
   confirmFlashcardBatch,
   createProfile,
+  listGifts,
+  listPendingRedeems,
   loadOrStartLesson,
   loadProfile,
   loadTopicSummary,
+  requestRedeem,
+  resolveRedeem,
   restartLesson,
   saveLessonProgress,
   setActiveTopicId,
+  startReviewLesson,
+  upsertGift,
+  type GiftItem,
+  type RedeemRequest,
 } from './db'
 import {
   advanceAfterFlashcards,
@@ -21,8 +29,10 @@ import {
 } from './lesson/engine'
 import type { LessonCard } from './lesson/types'
 import { AddFlashcardsScreen } from './screens/AddFlashcardsScreen'
+import { GiftShopScreen } from './screens/GiftShopScreen'
 import { HomeScreen } from './screens/HomeScreen'
 import { LessonScreen } from './screens/LessonScreen'
+import { ParentGiftsScreen } from './screens/ParentGiftsScreen'
 import { ParentHomeScreen } from './screens/ParentHomeScreen'
 import { ResultScreen } from './screens/ResultScreen'
 import { prepareVoices, stopSpeaking } from './speech'
@@ -33,6 +43,20 @@ type Screen =
   | 'result'
   | 'parent-home'
   | 'parent-add'
+  | 'parent-gifts'
+  | 'gifts'
+
+function normalizeProgress(progress: LessonProgress): LessonProgress {
+  return {
+    ...progress,
+    mode: progress.mode || 'learn',
+    sessionId:
+      progress.sessionId ||
+      (progress.mode === 'review'
+        ? `review-${progress.topicId}`
+        : `lesson-${progress.topicId}`),
+  }
+}
 
 function App() {
   const [profile, setProfile] = useState<ChildProfile | null>(null)
@@ -48,6 +72,8 @@ function App() {
   const [learnedCount, setLearnedCount] = useState(0)
   const [totalCount, setTotalCount] = useState(0)
   const [topicCompleted, setTopicCompleted] = useState(false)
+  const [gifts, setGifts] = useState<GiftItem[]>([])
+  const [pendingRedeems, setPendingRedeems] = useState<RedeemRequest[]>([])
 
   useEffect(() => {
     prepareVoices()
@@ -57,9 +83,7 @@ function App() {
   useEffect(() => {
     return () => {
       for (const card of lessonCards) {
-        if (card.imageUrl) {
-          URL.revokeObjectURL(card.imageUrl)
-        }
+        if (card.imageUrl) URL.revokeObjectURL(card.imageUrl)
       }
     }
   }, [lessonCards])
@@ -67,18 +91,20 @@ function App() {
   async function refreshSummary(topicId?: string) {
     const summary = await loadTopicSummary(topicId)
     const latestProfile = await loadProfile()
+    const nextGifts = await listGifts()
+    const pending = await listPendingRedeems()
     setProfile(latestProfile ?? null)
     setTopics(summary.topics)
     setActiveTopic(summary.topic)
     setLearnedCount(summary.learnedCount)
     setTotalCount(summary.totalCount)
     setTopicCompleted(summary.topic?.status === 'completed')
-    setProgress(summary.activeLesson ?? null)
+    setProgress(summary.activeLesson ? normalizeProgress(summary.activeLesson) : null)
+    setGifts(nextGifts)
+    setPendingRedeems(pending)
     setLessonCards((previous) => {
       for (const card of previous) {
-        if (card.imageUrl) {
-          URL.revokeObjectURL(card.imageUrl)
-        }
+        if (card.imageUrl) URL.revokeObjectURL(card.imageUrl)
       }
       return summary.cards
     })
@@ -90,14 +116,7 @@ function App() {
         const savedProfile = await loadProfile()
         setProfile(savedProfile ?? null)
         if (savedProfile) {
-          const summary = await loadTopicSummary()
-          setTopics(summary.topics)
-          setActiveTopic(summary.topic)
-          setLearnedCount(summary.learnedCount)
-          setTotalCount(summary.totalCount)
-          setTopicCompleted(summary.topic?.status === 'completed')
-          setProgress(summary.activeLesson ?? null)
-          setLessonCards(summary.cards)
+          await refreshSummary()
         }
       } catch {
         setError('Không thể đọc dữ liệu đã lưu trên thiết bị.')
@@ -105,7 +124,6 @@ function App() {
         setLoading(false)
       }
     }
-
     void bootstrap()
   }, [])
 
@@ -116,25 +134,20 @@ function App() {
       setError('Ba mẹ hãy nhập tên của bé.')
       return
     }
-
     setError('')
     try {
       const savedProfile = await createProfile(displayName, avatar)
       setProfile(savedProfile)
       await refreshSummary()
       const started = await loadOrStartLesson()
-      setProgress(started.progress)
+      setProgress(normalizeProgress(started.progress))
       setLessonCards((previous) => {
         for (const card of previous) {
-          if (card.imageUrl) {
-            URL.revokeObjectURL(card.imageUrl)
-          }
+          if (card.imageUrl) URL.revokeObjectURL(card.imageUrl)
         }
         return started.cards
       })
-      setScreen(
-        started.progress.phase === 'result' ? 'result' : 'lesson',
-      )
+      setScreen(started.progress.phase === 'result' ? 'result' : 'lesson')
     } catch {
       setError('Không thể lưu hồ sơ. Ba mẹ hãy thử lại.')
     }
@@ -144,22 +157,33 @@ function App() {
     setError('')
     try {
       const started = await loadOrStartLesson(activeTopic?.id)
-      setProgress(started.progress)
+      setProgress(normalizeProgress(started.progress))
       setLessonCards((previous) => {
         for (const card of previous) {
-          if (card.imageUrl) {
-            URL.revokeObjectURL(card.imageUrl)
-          }
+          if (card.imageUrl) URL.revokeObjectURL(card.imageUrl)
         }
         return started.cards
       })
-      setScreen(
-        started.progress.phase === 'result' ? 'result' : 'lesson',
-      )
+      setScreen(started.progress.phase === 'result' ? 'result' : 'lesson')
     } catch (caught) {
-      setError(
-        caught instanceof Error ? caught.message : 'Không thể mở bài học.',
-      )
+      setError(caught instanceof Error ? caught.message : 'Không thể mở bài học.')
+    }
+  }
+
+  async function handleReview() {
+    setError('')
+    try {
+      const started = await startReviewLesson(activeTopic?.id)
+      setProgress(normalizeProgress(started.progress))
+      setLessonCards((previous) => {
+        for (const card of previous) {
+          if (card.imageUrl) URL.revokeObjectURL(card.imageUrl)
+        }
+        return started.cards
+      })
+      setScreen('lesson')
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Không thể mở ôn tập.')
     }
   }
 
@@ -167,12 +191,10 @@ function App() {
     setError('')
     try {
       const started = await restartLesson(activeTopic?.id)
-      setProgress(started.progress)
+      setProgress(normalizeProgress(started.progress))
       setLessonCards((previous) => {
         for (const card of previous) {
-          if (card.imageUrl) {
-            URL.revokeObjectURL(card.imageUrl)
-          }
+          if (card.imageUrl) URL.revokeObjectURL(card.imageUrl)
         }
         return started.cards
       })
@@ -185,7 +207,7 @@ function App() {
   }
 
   async function persist(next: LessonProgress) {
-    const saved = await saveLessonProgress(next)
+    const saved = normalizeProgress(await saveLessonProgress(next))
     setProgress(saved)
     await refreshSummary(saved.topicId)
     if (saved.phase === 'result' || saved.completed) {
@@ -195,12 +217,8 @@ function App() {
 
   async function handleFlashcardNext() {
     if (!progress) return
-    const checkpointCards = cardsForCheckpoint(
-      lessonCards,
-      progress.checkpoint,
-    )
-    const next = advanceAfterFlashcards(progress, checkpointCards.length)
-    await persist(next)
+    const checkpointCards = cardsForCheckpoint(lessonCards, progress.checkpoint)
+    await persist(advanceAfterFlashcards(progress, checkpointCards.length))
   }
 
   async function handleAnswer(payload: {
@@ -210,18 +228,16 @@ function App() {
     cardId: string
   }) {
     if (!progress) return
-    const checkpointCards = cardsForCheckpoint(
-      lessonCards,
-      progress.checkpoint,
+    const checkpointCards = cardsForCheckpoint(lessonCards, progress.checkpoint)
+    await persist(
+      advanceAfterQuestion(
+        progress,
+        checkpointCards.length,
+        payload,
+        finalCheckpointFor(lessonCards.length),
+        learningCheckpointCount(lessonCards.length),
+      ),
     )
-    const next = advanceAfterQuestion(
-      progress,
-      checkpointCards.length,
-      payload,
-      finalCheckpointFor(lessonCards.length),
-      learningCheckpointCount(lessonCards.length),
-    )
-    await persist(next)
   }
 
   if (loading) {
@@ -243,7 +259,6 @@ function App() {
           <h1>Chào mừng con</h1>
           <p>Ba mẹ chỉ cần thiết lập một lần</p>
         </section>
-
         <form className="setup-form" onSubmit={handleSetup}>
           <fieldset>
             <legend>Chọn hình đại diện</legend>
@@ -270,7 +285,6 @@ function App() {
               ))}
             </div>
           </fieldset>
-
           <label className="name-field">
             <span>Tên của bé</span>
             <input
@@ -283,13 +297,11 @@ function App() {
               value={name}
             />
           </label>
-
           {error && (
             <p className="error-message" role="alert">
               {error}
             </p>
           )}
-
           <button className="primary-button" type="submit">
             Bắt đầu học
           </button>
@@ -311,13 +323,33 @@ function App() {
     )
   }
 
+  if (screen === 'parent-gifts') {
+    return (
+      <ParentGiftsScreen
+        gifts={gifts}
+        pending={pendingRedeems}
+        onBack={() => setScreen('parent-home')}
+        onSaveGift={async (input) => {
+          await upsertGift(input)
+          await refreshSummary(activeTopic?.id)
+        }}
+        onResolve={async (requestId, decision) => {
+          await resolveRedeem(requestId, decision)
+          await refreshSummary(activeTopic?.id)
+        }}
+      />
+    )
+  }
+
   if (screen === 'parent-home') {
     return (
       <ParentHomeScreen
         topics={topics}
         activeTopicId={activeTopic?.id ?? ''}
+        pendingRedeemCount={pendingRedeems.length}
         onBack={() => setScreen('home')}
         onAddFlashcards={() => setScreen('parent-add')}
+        onManageGifts={() => setScreen('parent-gifts')}
         onSelectTopic={(topicId) => {
           void (async () => {
             await setActiveTopicId(topicId)
@@ -329,10 +361,28 @@ function App() {
     )
   }
 
+  if (screen === 'gifts') {
+    return (
+      <GiftShopScreen
+        profile={profile}
+        gifts={gifts}
+        onBack={() => setScreen('home')}
+        onRedeem={async (giftId) => {
+          await requestRedeem(giftId)
+          await refreshSummary(activeTopic?.id)
+        }}
+      />
+    )
+  }
+
   if (screen === 'lesson' && progress && progress.phase !== 'result') {
     return (
       <LessonScreen
-        topicName={activeTopic?.nameEnglish ?? 'Lesson'}
+        topicName={
+          progress.mode === 'review'
+            ? `Ôn: ${activeTopic?.nameEnglish ?? 'Lesson'}`
+            : activeTopic?.nameEnglish ?? 'Lesson'
+        }
         cards={lessonCards}
         progress={progress}
         onFlashcardNext={() => {
@@ -374,7 +424,7 @@ function App() {
         topic={activeTopic}
         learnedCount={learnedCount}
         totalCount={totalCount}
-        hasActiveLesson={Boolean(progress && !progress.completed)}
+        hasActiveLesson={Boolean(progress && !progress.completed && progress.mode !== 'review')}
         topicCompleted={topicCompleted}
         onContinue={() => {
           void handleContinueLesson()
@@ -382,6 +432,10 @@ function App() {
         onRestart={() => {
           void handleRestartLesson()
         }}
+        onReview={() => {
+          void handleReview()
+        }}
+        onOpenGifts={() => setScreen('gifts')}
         onOpenParent={() => setScreen('parent-home')}
       />
       {error && (

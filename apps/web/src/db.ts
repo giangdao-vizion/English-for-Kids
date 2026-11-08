@@ -16,6 +16,7 @@ import {
 } from './sample/animals'
 import {
   createInitialProgress,
+  finalCheckpointFor,
   type LessonProgress,
 } from './lesson/engine'
 import type { LessonCard } from './lesson/types'
@@ -51,6 +52,28 @@ export type DraftFlashcard = {
   removed: boolean
 }
 
+export type GiftItem = {
+  id: string
+  schemaVersion: typeof SCHEMA_VERSION
+  name: string
+  starCost: number
+  stock: number
+  active: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export type RedeemRequest = {
+  id: string
+  schemaVersion: typeof SCHEMA_VERSION
+  giftId: string
+  giftName: string
+  starCost: number
+  status: 'pending' | 'approved' | 'deferred'
+  createdAt: string
+  updatedAt: string
+}
+
 export class EnglishForKidsDatabase extends Dexie {
   profiles!: EntityTable<ChildProfile, 'id'>
   settings!: EntityTable<AppSettings, 'id'>
@@ -60,6 +83,8 @@ export class EnglishForKidsDatabase extends Dexie {
   lessons!: EntityTable<LessonRecord, 'id'>
   images!: EntityTable<StoredImage, 'id'>
   meta!: EntityTable<MetaRecord, 'id'>
+  gifts!: EntityTable<GiftItem, 'id'>
+  redeemRequests!: EntityTable<RedeemRequest, 'id'>
 
   constructor(databaseName = DATABASE_NAME) {
     super(databaseName)
@@ -83,6 +108,19 @@ export class EnglishForKidsDatabase extends Dexie {
       images: 'id, kind',
       meta: 'id',
     })
+
+    this.version(3).stores({
+      profiles: 'id, lastActiveAt',
+      settings: 'id',
+      topics: 'id, status, addedMonth, lastStudiedAt',
+      cards: 'id, topicId, normalizedWord, parentConfirmed',
+      wordProgress: 'id, [profileId+cardId], state, nextReviewAt, lastSeenAt',
+      lessons: 'id, topicId, completed, updatedAt',
+      images: 'id, kind',
+      meta: 'id',
+      gifts: 'id, active',
+      redeemRequests: 'id, status, createdAt',
+    })
   }
 }
 
@@ -98,8 +136,8 @@ function currentMonth(): string {
   return `${now.getFullYear()}-${month}`
 }
 
-function lessonIdFor(topicId: string): string {
-  return `lesson-${topicId}`
+function lessonIdFor(topicId: string, mode: 'learn' | 'review' = 'learn'): string {
+  return mode === 'review' ? `review-${topicId}` : `lesson-${topicId}`
 }
 
 function createId(prefix: string): string {
@@ -142,8 +180,49 @@ export async function createProfile(
   }
 
   await ensureAnimalsDemoTopic()
+  await ensureDefaultGifts()
   await setActiveTopicId(ANIMALS_TOPIC_ID)
   return profile
+}
+
+export async function ensureDefaultGifts(): Promise<void> {
+  const count = await db.gifts.count()
+  if (count > 0) {
+    return
+  }
+  const now = timestamp()
+  await db.gifts.bulkPut([
+    {
+      id: 'gift-sticker',
+      schemaVersion: SCHEMA_VERSION,
+      name: 'Sticker dễ thương',
+      starCost: 3,
+      stock: 10,
+      active: true,
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: 'gift-candy',
+      schemaVersion: SCHEMA_VERSION,
+      name: 'Kẹo trái cây',
+      starCost: 5,
+      stock: 8,
+      active: true,
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: 'gift-toy',
+      schemaVersion: SCHEMA_VERSION,
+      name: 'Đồ chơi nhỏ',
+      starCost: 10,
+      stock: 3,
+      active: true,
+      createdAt: now,
+      updatedAt: now,
+    },
+  ])
 }
 
 export async function loadProfile(): Promise<ChildProfile | undefined> {
@@ -326,16 +405,16 @@ export async function loadOrStartLesson(
     throw new Error('Chủ đề cần ít nhất 2 flashcard để học.')
   }
 
-  const existing = await db.lessons.get(lessonIdFor(activeId))
+  const existing = await db.lessons.get(lessonIdFor(activeId, 'learn'))
   if (existing && !existing.completed) {
     return { progress: existing, cards }
   }
 
-  const progress = createInitialProgress(activeId)
+  const progress = createInitialProgress(activeId, 'learn')
   const now = timestamp()
   const record: LessonRecord = {
     ...progress,
-    id: lessonIdFor(activeId),
+    id: progress.sessionId,
     schemaVersion: SCHEMA_VERSION,
     createdAt: now,
   }
@@ -346,11 +425,12 @@ export async function loadOrStartLesson(
 export async function saveLessonProgress(
   progress: LessonProgress,
 ): Promise<LessonProgress> {
-  const id = lessonIdFor(progress.topicId)
+  const id = progress.sessionId || lessonIdFor(progress.topicId, progress.mode)
   const existing = await db.lessons.get(id)
   const now = timestamp()
   const record: LessonRecord = {
     ...progress,
+    sessionId: id,
     id,
     schemaVersion: SCHEMA_VERSION,
     createdAt: existing?.createdAt ?? now,
@@ -375,9 +455,11 @@ export async function saveLessonProgress(
     if (topic) {
       await db.topics.put({
         ...topic,
-        status: 'completed',
-        completedAt: now,
+        status: progress.mode === 'learn' ? 'completed' : topic.status,
+        completedAt:
+          progress.mode === 'learn' ? now : topic.completedAt,
         lastStudiedAt: now,
+        lastReviewedAt: progress.mode === 'review' ? now : topic.lastReviewedAt,
         updatedAt: now,
       })
     }
@@ -386,8 +468,9 @@ export async function saveLessonProgress(
     if (topic) {
       await db.topics.put({
         ...topic,
-        status: 'active',
-        completedAt: null,
+        status: progress.mode === 'learn' ? 'active' : topic.status,
+        completedAt:
+          progress.mode === 'learn' ? null : topic.completedAt,
         lastStudiedAt: now,
         updatedAt: now,
       })
@@ -506,4 +589,138 @@ export async function confirmFlashcardBatch(input: {
   )
 
   return topic
+}
+
+export async function startReviewLesson(
+  topicId?: string,
+): Promise<{ progress: LessonProgress; cards: LessonCard[] }> {
+  const activeId = topicId ?? (await getActiveTopicId())
+  await setActiveTopicId(activeId)
+  const cards = await loadLessonCards(activeId)
+  if (cards.length < 2) {
+    throw new Error('Cần ít nhất 2 từ để ôn tập.')
+  }
+
+  const now = timestamp()
+  const progress: LessonProgress = {
+    ...createInitialProgress(activeId, 'review'),
+    phase: 'listen-choose',
+    checkpoint: finalCheckpointFor(cards.length),
+    updatedAt: now,
+  }
+  const record: LessonRecord = {
+    ...progress,
+    id: progress.sessionId,
+    schemaVersion: SCHEMA_VERSION,
+    createdAt: now,
+  }
+  await db.lessons.put(record)
+  return { progress: record, cards }
+}
+
+export async function listGifts(): Promise<GiftItem[]> {
+  await ensureDefaultGifts()
+  return db.gifts.filter((gift) => gift.active).toArray()
+}
+
+export async function upsertGift(input: {
+  id?: string
+  name: string
+  starCost: number
+  stock: number
+}): Promise<GiftItem> {
+  const now = timestamp()
+  const existing = input.id ? await db.gifts.get(input.id) : undefined
+  const gift: GiftItem = {
+    id: existing?.id || createId('gift'),
+    schemaVersion: SCHEMA_VERSION,
+    name: input.name.trim(),
+    starCost: Math.max(1, Math.floor(input.starCost)),
+    stock: Math.max(0, Math.floor(input.stock)),
+    active: true,
+    createdAt: existing?.createdAt || now,
+    updatedAt: now,
+  }
+  await db.gifts.put(gift)
+  return gift
+}
+
+export async function requestRedeem(giftId: string): Promise<RedeemRequest> {
+  const gift = await db.gifts.get(giftId)
+  if (!gift || !gift.active || gift.stock <= 0) {
+    throw new Error('Quà không còn hoặc đã hết.')
+  }
+  const profile = await db.profiles.get(PROFILE_ID)
+  if (!profile || profile.totalStars < gift.starCost) {
+    throw new Error('Bé chưa đủ sao để đổi quà này.')
+  }
+  const now = timestamp()
+  const request: RedeemRequest = {
+    id: createId('redeem'),
+    schemaVersion: SCHEMA_VERSION,
+    giftId: gift.id,
+    giftName: gift.name,
+    starCost: gift.starCost,
+    status: 'pending',
+    createdAt: now,
+    updatedAt: now,
+  }
+  await db.redeemRequests.put(request)
+  return request
+}
+
+export async function listPendingRedeems(): Promise<RedeemRequest[]> {
+  return db.redeemRequests.where('status').equals('pending').toArray()
+}
+
+export async function resolveRedeem(
+  requestId: string,
+  decision: 'approved' | 'deferred',
+): Promise<void> {
+  const request = await db.redeemRequests.get(requestId)
+  if (!request || request.status !== 'pending') {
+    throw new Error('Yêu cầu đổi quà không còn hiệu lực.')
+  }
+  const now = timestamp()
+  if (decision === 'deferred') {
+    await db.redeemRequests.put({
+      ...request,
+      status: 'deferred',
+      updatedAt: now,
+    })
+    return
+  }
+
+  const profile = await db.profiles.get(PROFILE_ID)
+  const gift = await db.gifts.get(request.giftId)
+  if (!profile || !gift) {
+    throw new Error('Không tìm thấy hồ sơ hoặc quà.')
+  }
+  if (profile.totalStars < request.starCost || gift.stock <= 0) {
+    throw new Error('Không đủ sao hoặc quà đã hết.')
+  }
+
+  await db.transaction(
+    'rw',
+    db.profiles,
+    db.gifts,
+    db.redeemRequests,
+    async () => {
+      await db.profiles.put({
+        ...profile,
+        totalStars: profile.totalStars - request.starCost,
+        updatedAt: now,
+      })
+      await db.gifts.put({
+        ...gift,
+        stock: gift.stock - 1,
+        updatedAt: now,
+      })
+      await db.redeemRequests.put({
+        ...request,
+        status: 'approved',
+        updatedAt: now,
+      })
+    },
+  )
 }

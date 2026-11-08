@@ -63,8 +63,13 @@ Một khóa tạm thời từng xuất hiện trong log khi cấu hình đã đ�
 - Tạo icon PNG dành cho màn hình chính iPhone.
 - Thu hồi khóa service account tạm sau mỗi lần triển khai.
 
-Chưa thực hiện:
+Đã triển khai analyzer:
 
-- Chưa có mã backend để triển khai lên Cloud Run.
-- Chưa cấu hình rate limit thực tế vì endpoint chưa được xây dựng.
-- Chưa kiểm thử lời gọi Gemini từ Cloud Run.
+- Cloud Run service: `english-for-kids-analyzer`
+- URL: `https://english-for-kids-analyzer-600276893901.us-central1.run.app`
+- Region: `us-central1`
+- Secret: `GEMINI_API_KEY=gemini-api-key:latest`
+- Model mặc định: `gemini-flash-lite-latest`
+- `min instances = 0`, `max instances = 1`
+- Endpoint: `GET /health`, `POST /analyze`
+- Rate limit đơn giản theo IP; CORS chỉ mở cho hosting và localhost.
