@@ -9,20 +9,29 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-* {
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
   -webkit-tap-highlight-color: transparent;
 }
 
 html {
+  width: 100%;
   min-width: 320px;
   min-height: 100%;
+  overflow-x: hidden;
   background: #eef1fb;
 }
 
 body {
+  width: 100%;
   min-width: 320px;
+  min-height: 100vh;
   min-height: 100svh;
+  min-height: 100dvh;
   margin: 0;
+  overflow-x: hidden;
 }
 
 button,
@@ -35,5 +44,8 @@ button {
 }
 
 #root {
+  width: 100%;
+  min-height: 100vh;
   min-height: 100svh;
+  min-height: 100dvh;
 }

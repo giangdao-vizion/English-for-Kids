@@ -1,9 +1,15 @@
 .app-shell {
-  width: min(100%, 430px);
+  width: 100%;
+  max-width: 430px;
+  min-height: 100vh;
   min-height: 100svh;
+  min-height: 100dvh;
   margin: 0 auto;
-  padding: max(20px, env(safe-area-inset-top)) 22px
-    max(20px, env(safe-area-inset-bottom));
+  padding: max(20px, env(safe-area-inset-top))
+    max(22px, env(safe-area-inset-right))
+    max(20px, env(safe-area-inset-bottom))
+    max(22px, env(safe-area-inset-left));
+  overflow-x: hidden;
   background: #fffdf7;
   color: #28304a;
 }
