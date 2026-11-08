@@ -1619,6 +1619,53 @@
   font-weight: 900;
 }
 
+.tools-section {
+  display: grid;
+  gap: 12px;
+  padding: 4px 2px 18px;
+}
+
+.tools-section h1 {
+  margin: 0;
+  color: #222a42;
+  font-size: 22px;
+  line-height: 1.2;
+}
+
+.tools-section p,
+.tools-note,
+.tools-meta {
+  margin: 0;
+  color: #5e667d;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.install-steps {
+  margin: 0;
+  padding-left: 1.2rem;
+  color: #3a4258;
+  font-size: 15px;
+  line-height: 1.5;
+  display: grid;
+  gap: 8px;
+}
+
+.tools-actions {
+  display: grid;
+  gap: 10px;
+}
+
+.info-message {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: #eef6ff;
+  color: #2f4f8c;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .loading-dot {
     animation: none;

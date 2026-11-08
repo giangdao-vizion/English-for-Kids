@@ -15,6 +15,7 @@ type ParentHomeScreenProps = {
   onAddFlashcards: () => void
   onManageGifts: () => void
   onManageExercises: () => void
+  onOpenTools: () => void
   onSelectTopic: (topicId: string) => void
   onToggleExercise: (
     topicId: string,
@@ -37,6 +38,7 @@ export function ParentHomeScreen({
   onAddFlashcards,
   onManageGifts,
   onManageExercises,
+  onOpenTools,
   onSelectTopic,
   onToggleExercise,
   onAddExercise,
@@ -115,6 +117,13 @@ export function ParentHomeScreen({
                   {pendingRedeemCount > 0
                     ? ` (${pendingRedeemCount} chờ duyệt)`
                     : ''}
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => runMenuAction(onOpenTools)}
+                >
+                  Sao lưu & cài iPhone
                 </button>
               </div>
             </>

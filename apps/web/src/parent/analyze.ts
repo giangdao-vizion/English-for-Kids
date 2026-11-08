@@ -138,6 +138,28 @@ function localFallback(images: AnalyzeImageInput[]): AiAnalysisResponse {
   }
 }
 
+function networkWarning(error: unknown): string {
+  const offline =
+    typeof navigator !== 'undefined' && navigator.onLine === false
+  if (offline) {
+    return 'Không có mạng. AI cloud cần Internet; đã điền sẵn dự phòng trên máy để ba mẹ xác nhận.'
+  }
+  if (error instanceof DOMException && error.name === 'AbortError') {
+    return 'AI cloud phản hồi quá lâu. Đã điền sẵn dự phòng trên máy để ba mẹ xác nhận.'
+  }
+  const message = error instanceof Error ? error.message : ''
+  if (
+    /failed to fetch|networkerror|load failed|network request failed/i.test(
+      message,
+    )
+  ) {
+    return 'Mất kết nối tới AI cloud. Kiểm tra mạng rồi thử lại, hoặc xác nhận bản điền sẵn trên máy.'
+  }
+  return error instanceof Error
+    ? `AI cloud chưa sẵn sàng (${error.message}). Đã điền sẵn để ba mẹ xác nhận.`
+    : 'AI cloud chưa sẵn sàng. Đã điền sẵn để ba mẹ xác nhận.'
+}
+
 export async function analyzeFlashcards(
   images: AnalyzeImageInput[],
 ): Promise<AnalyzeResult> {
@@ -167,10 +189,7 @@ export async function analyzeFlashcards(
     return {
       analysis,
       source: 'local-fallback',
-      warning:
-        error instanceof Error
-          ? `AI cloud chưa sẵn sàng (${error.message}). Đã điền sẵn để ba mẹ xác nhận.`
-          : 'AI cloud chưa sẵn sàng. Đã điền sẵn để ba mẹ xác nhận.',
+      warning: networkWarning(error),
     }
   }
 }

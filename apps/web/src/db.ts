@@ -170,6 +170,10 @@ function createId(prefix: string): string {
   return `${prefix}-${crypto.randomUUID()}`
 }
 
+export async function getAppSettings(): Promise<AppSettings | undefined> {
+  return db.settings.get(SETTINGS_ID)
+}
+
 export async function createProfile(
   displayName: string,
   avatarImageId: string,
@@ -698,6 +702,104 @@ export async function loadOrStartLesson(
   return { progress: record, cards }
 }
 
+export async function recordCardAttempt(input: {
+  cardId: string
+  firstTry: boolean
+  correct: boolean
+  revealed: boolean
+}): Promise<void> {
+  const now = timestamp()
+  const id = `wp-${PROFILE_ID}-${input.cardId}`
+  const existing = await db.wordProgress.get(id)
+  const base =
+    existing ??
+    ({
+      id,
+      schemaVersion: SCHEMA_VERSION,
+      profileId: PROFILE_ID,
+      cardId: input.cardId,
+      state: 'new' as const,
+      totalAppearances: 0,
+      firstTryCorrectCount: 0,
+      incorrectCount: 0,
+      answerRevealCount: 0,
+      successfulSessionDates: [],
+      lastSeenAt: null,
+      nextReviewAt: null,
+      reviewStep: 0 as const,
+      weakExerciseIds: [],
+      createdAt: now,
+      updatedAt: now,
+    } satisfies WordProgress)
+
+  const totalAppearances = base.totalAppearances + 1
+  const firstTryCorrectCount =
+    base.firstTryCorrectCount + (input.firstTry && input.correct ? 1 : 0)
+  const incorrectCount = base.incorrectCount + (input.correct ? 0 : 1)
+  const answerRevealCount =
+    base.answerRevealCount + (input.revealed ? 1 : 0)
+
+  let state: WordProgress['state'] = base.state
+  if (!input.correct || input.revealed) {
+    state = 'needs_review'
+  } else if (input.firstTry && input.correct) {
+    state = state === 'new' ? 'learning' : state
+    if (firstTryCorrectCount >= 2 && incorrectCount === 0) {
+      state = 'mastered'
+    } else if (state === 'needs_review') {
+      state = 'learning'
+    }
+  } else {
+    state = state === 'new' ? 'learning' : state
+  }
+
+  const reviewDays = [1, 3, 7, 30] as const
+  let reviewStep: WordProgress['reviewStep'] = base.reviewStep
+  let nextReviewAt = base.nextReviewAt
+  if (state === 'needs_review') {
+    reviewStep = 0
+    nextReviewAt = new Date(Date.now() + reviewDays[0] * 86400000).toISOString()
+  } else if (input.correct && input.firstTry && !input.revealed) {
+    const nextStep = Math.min(3, base.reviewStep + 1)
+    reviewStep = nextStep as WordProgress['reviewStep']
+    nextReviewAt = new Date(
+      Date.now() + reviewDays[Math.min(nextStep, 3)] * 86400000,
+    ).toISOString()
+  }
+
+  await db.wordProgress.put({
+    ...base,
+    state,
+    totalAppearances,
+    firstTryCorrectCount,
+    incorrectCount,
+    answerRevealCount,
+    lastSeenAt: now,
+    nextReviewAt,
+    reviewStep,
+    updatedAt: now,
+  })
+}
+
+export async function listWeakCardIds(topicId: string): Promise<string[]> {
+  const cards = await db.cards.where('topicId').equals(topicId).toArray()
+  const ids = cards.map((card) => card.id)
+  const progressRows = await db.wordProgress
+    .where('profileId')
+    .equals(PROFILE_ID)
+    .toArray()
+  const weak = new Set(
+    progressRows
+      .filter(
+        (row) =>
+          ids.includes(row.cardId) &&
+          (row.state === 'needs_review' || row.incorrectCount > 0),
+      )
+      .map((row) => row.cardId),
+  )
+  return ids.filter((id) => weak.has(id))
+}
+
 export async function saveLessonProgress(
   progress: LessonProgress,
 ): Promise<LessonProgress> {
@@ -882,12 +984,23 @@ export async function startReviewLesson(
     throw new Error('Cần ít nhất 2 từ để ôn tập.')
   }
 
+  const weakIds = await listWeakCardIds(activeId)
+  const weakSet = new Set(weakIds)
+  // Ưu tiên từ yếu / cần ôn trước, rồi các từ còn lại.
+  const ordered =
+    weakIds.length > 0
+      ? [
+          ...cards.filter((card) => weakSet.has(card.id)),
+          ...cards.filter((card) => !weakSet.has(card.id)),
+        ]
+      : cards
+
   const now = timestamp()
   const lessonOptions = await getLessonExerciseOptions(activeId)
   const progress: LessonProgress = {
     ...createInitialProgress(activeId, 'review', lessonOptions),
     phase: lessonOptions.gradedPhases[0],
-    checkpoint: finalCheckpointFor(cards.length),
+    checkpoint: finalCheckpointFor(ordered.length),
     updatedAt: now,
   }
   const record: LessonRecord = {
@@ -897,7 +1010,7 @@ export async function startReviewLesson(
     createdAt: now,
   }
   await db.lessons.put(record)
-  return { progress: record, cards }
+  return { progress: record, cards: ordered }
 }
 
 export async function listGifts(): Promise<GiftItem[]> {

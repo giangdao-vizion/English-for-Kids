@@ -69,6 +69,12 @@ export function AddFlashcardsScreen({
     setBusy(true)
     setPhase('analyzing')
     try {
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+        setInfo(
+          'Máy đang ngoại tuyến. AI cloud cần mạng; sẽ điền sẵn dự phòng trên máy để ba mẹ sửa.',
+        )
+      }
+
       const selected = [...fileList].slice(0, 20)
       if (fileList.length > 20) {
         setError('Chỉ lấy tối đa 20 ảnh mỗi lần.')

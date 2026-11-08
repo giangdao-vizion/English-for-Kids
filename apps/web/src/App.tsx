@@ -5,6 +5,7 @@ import {
   addTopicExercise,
   confirmFlashcardBatch,
   createProfile,
+  getAppSettings,
   getLessonExerciseOptions,
   listAddableExercises,
   listAllExerciseConfigs,
@@ -17,6 +18,7 @@ import {
   requestRedeem,
   resolveRedeem,
   restartLesson,
+  recordCardAttempt,
   saveLessonProgress,
   setActiveTopicId,
   setTopicExerciseEnabled,
@@ -42,6 +44,7 @@ import { LessonScreen } from './screens/LessonScreen'
 import { ParentExerciseLibraryScreen } from './screens/ParentExerciseLibraryScreen'
 import { ParentGiftsScreen } from './screens/ParentGiftsScreen'
 import { ParentHomeScreen } from './screens/ParentHomeScreen'
+import { ParentToolsScreen } from './screens/ParentToolsScreen'
 import { ResultScreen } from './screens/ResultScreen'
 import { prepareVoices, speakNow, stopSpeaking } from './speech'
 
@@ -53,6 +56,7 @@ type Screen =
   | 'parent-add'
   | 'parent-gifts'
   | 'parent-exercises'
+  | 'parent-tools'
   | 'gifts'
 
 function normalizeProgress(progress: LessonProgress): LessonProgress {
@@ -86,6 +90,7 @@ function App() {
   const [exerciseConfigsByTopic, setExerciseConfigsByTopic] = useState<
     Record<string, TopicExerciseConfig[]>
   >({})
+  const [lastBackupAt, setLastBackupAt] = useState<string | null>(null)
 
   useEffect(() => {
     prepareVoices()
@@ -106,6 +111,7 @@ function App() {
     const nextGifts = await listGifts()
     const pending = await listPendingRedeems()
     const exerciseConfigs = await listAllExerciseConfigs()
+    const settings = await getAppSettings()
     setProfile(latestProfile ?? null)
     setTopics(summary.topics)
     setActiveTopic(summary.topic)
@@ -116,6 +122,7 @@ function App() {
     setGifts(nextGifts)
     setPendingRedeems(pending)
     setExerciseConfigsByTopic(exerciseConfigs)
+    setLastBackupAt(settings?.lastBackupAt ?? null)
     setLessonCards((previous) => {
       for (const card of previous) {
         if (card.imageUrl) URL.revokeObjectURL(card.imageUrl)
@@ -254,6 +261,7 @@ function App() {
     cardId: string
   }) {
     if (!progress) return
+    await recordCardAttempt(payload)
     const checkpointCards = cardsForCheckpoint(lessonCards, progress.checkpoint)
     const lessonOptions = await getLessonExerciseOptions(progress.topicId)
     await persist(
@@ -377,6 +385,18 @@ function App() {
     )
   }
 
+  if (screen === 'parent-tools') {
+    return (
+      <ParentToolsScreen
+        lastBackupAt={lastBackupAt}
+        onBack={() => setScreen('parent-home')}
+        onDataChanged={async () => {
+          await refreshSummary()
+        }}
+      />
+    )
+  }
+
   if (screen === 'parent-home') {
     return (
       <>
@@ -392,6 +412,7 @@ function App() {
           onAddFlashcards={() => setScreen('parent-add')}
           onManageGifts={() => setScreen('parent-gifts')}
           onManageExercises={() => setScreen('parent-exercises')}
+          onOpenTools={() => setScreen('parent-tools')}
           onSelectTopic={(topicId) => {
             void (async () => {
               await setActiveTopicId(topicId)

@@ -139,13 +139,12 @@ Trạng thái: `Đang thực hiện`
 - Runtime service account riêng.
 - Budget cảnh báo 25.000 VND/tháng.
 
-Nội dung còn cần hoàn thành:
+Nội dung còn cần hoàn thành / đã chốt trong MVP:
 
-- Chốt cách lưu dữ liệu và sao lưu trên iPhone.
-- Chốt cách phát giọng Anh–Mỹ và tiếng Việt.
-- Chốt chi tiết hoạt động khi mất Internet.
-- Xây và triển khai backend với `min instances = 0`, `max instances = 1`.
-- Xây và triển khai PWA.
+- Sao lưu cục bộ JSON trên iPhone (xuất/khôi phục) — đã có trong app.
+- Phát giọng Anh–Mỹ và tiếng Việt qua Web Speech + chạm để nghe trên iOS — đã có.
+- Mất Internet: học offline được; phân tích AI cảnh báo và fallback trên máy — đã có.
+- Backend Cloud Run `min=0` / `max=1` và PWA Firebase Hosting — đã triển khai.
 
 Chi tiết hạ tầng được lưu tại `docs/GOOGLE_CLOUD_SETUP.md`.
 
@@ -179,7 +178,7 @@ Chi tiết được lưu tại `docs/IMPLEMENTATION_PLAN.md`.
 
 ### Giai đoạn 12 — Xây dựng MVP
 
-Trạng thái: `Đang thực hiện — MVP reviewable: AI analyze + ôn tập + kho quà`
+Trạng thái: `Đang thực hiện — MVP gần đủ tiêu chuẩn nghiệm thu`
 
 Thứ tự dự kiến:
 
@@ -211,10 +210,13 @@ Kết quả Giai đoạn 1:
 - Đã mở khu vực phụ huynh (giữ 1 giây), thêm flashcard JPG/PNG, gọi AI phân tích (Cloud Run + Gemini), phụ huynh chỉ xác nhận/sửa khi sai.
 - Chọn chủ đề ở trang phụ huynh không tự thoát; phụ huynh bấm **Xong — về trang học** mới quay lại màn chính.
 - Đã có ôn tập, kho quà của bé, quản lý/duyệt quà phía phụ huynh.
+- Đã ghi `wordProgress` theo từng lần trả lời; Ôn tập ưu tiên từ `needs_review` / từng sai.
+- Menu phụ huynh có **Sao lưu & cài iPhone**: xuất/khôi phục JSON (checksum + ảnh tối ưu), hướng dẫn Add to Home Screen.
+- Phân tích AI: cảnh báo rõ khi mất mạng / timeout; vẫn điền dự phòng trên máy để ba mẹ xác nhận.
 
 ### Giai đoạn 13 — Kiểm thử
 
-Trạng thái: `Chưa bắt đầu`
+Trạng thái: `Chưa bắt đầu — chờ phụ huynh review MVP trên iPhone`
 
 Các lớp kiểm thử:
 
