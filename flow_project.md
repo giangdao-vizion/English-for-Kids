@@ -166,18 +166,20 @@ Chi tiết được lưu tại `docs/DATA_MODEL.md`.
 
 ### Giai đoạn 11 — Lập kế hoạch triển khai
 
-Trạng thái: `Bước tiếp theo`
+Trạng thái: `Đã xác nhận`
 
-Kết quả cần có:
+Kết quả:
 
 - Chia công việc thành các phần nhỏ.
 - Xác định thứ tự triển khai.
 - Tiêu chuẩn hoàn thành cho từng phần.
 - Danh sách kiểm thử tương ứng.
 
+Chi tiết được lưu tại `docs/IMPLEMENTATION_PLAN.md`.
+
 ### Giai đoạn 12 — Xây dựng MVP
 
-Trạng thái: `Chưa bắt đầu`
+Trạng thái: `Đang thực hiện — Giai đoạn 1 hoàn thành, Giai đoạn 2 tiếp theo`
 
 Thứ tự dự kiến:
 
@@ -188,6 +190,16 @@ Thứ tự dự kiến:
 5. Tiến độ, ôn tập và sao.
 6. Kho quà.
 7. Hoạt động ngoại tuyến và xử lý lỗi.
+
+Kết quả Giai đoạn 1:
+
+- Đã tạo workspace React và TypeScript.
+- Đã cấu hình PWA và service worker.
+- Đã tạo IndexedDB schema phiên bản 1.
+- Đã tạo cấu trúc dữ liệu dùng chung và kiểm tra phản hồi AI.
+- Đã xây màn hình thiết lập hồ sơ cùng trang chính cơ sở.
+- Đã kiểm tra dữ liệu hồ sơ tồn tại sau khi tải lại.
+- Build, typecheck, lint, kiểm thử và kiểm tra dependency production đều đạt.
 
 ### Giai đoạn 13 — Kiểm thử
 
