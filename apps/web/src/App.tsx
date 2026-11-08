@@ -4,6 +4,8 @@ import './app.css'
 import {
   confirmFlashcardBatch,
   createProfile,
+  getLessonExerciseOptions,
+  listAllExerciseConfigs,
   listGifts,
   listPendingRedeems,
   loadOrStartLesson,
@@ -14,6 +16,7 @@ import {
   restartLesson,
   saveLessonProgress,
   setActiveTopicId,
+  setTopicExerciseEnabled,
   startReviewLesson,
   upsertGift,
   type GiftItem,
@@ -27,6 +30,7 @@ import {
   learningCheckpointCount,
   type LessonProgress,
 } from './lesson/engine'
+import type { TopicExerciseConfig } from './lesson/exercises'
 import type { LessonCard } from './lesson/types'
 import { AddFlashcardsScreen } from './screens/AddFlashcardsScreen'
 import { GiftShopScreen } from './screens/GiftShopScreen'
@@ -74,6 +78,9 @@ function App() {
   const [topicCompleted, setTopicCompleted] = useState(false)
   const [gifts, setGifts] = useState<GiftItem[]>([])
   const [pendingRedeems, setPendingRedeems] = useState<RedeemRequest[]>([])
+  const [exerciseConfigsByTopic, setExerciseConfigsByTopic] = useState<
+    Record<string, TopicExerciseConfig[]>
+  >({})
 
   useEffect(() => {
     prepareVoices()
@@ -93,6 +100,7 @@ function App() {
     const latestProfile = await loadProfile()
     const nextGifts = await listGifts()
     const pending = await listPendingRedeems()
+    const exerciseConfigs = await listAllExerciseConfigs()
     setProfile(latestProfile ?? null)
     setTopics(summary.topics)
     setActiveTopic(summary.topic)
@@ -102,6 +110,7 @@ function App() {
     setProgress(summary.activeLesson ? normalizeProgress(summary.activeLesson) : null)
     setGifts(nextGifts)
     setPendingRedeems(pending)
+    setExerciseConfigsByTopic(exerciseConfigs)
     setLessonCards((previous) => {
       for (const card of previous) {
         if (card.imageUrl) URL.revokeObjectURL(card.imageUrl)
@@ -222,7 +231,14 @@ function App() {
   async function handleFlashcardNext() {
     if (!progress) return
     const checkpointCards = cardsForCheckpoint(lessonCards, progress.checkpoint)
-    await persist(advanceAfterFlashcards(progress, checkpointCards.length))
+    const lessonOptions = await getLessonExerciseOptions(progress.topicId)
+    await persist(
+      advanceAfterFlashcards(
+        progress,
+        checkpointCards.length,
+        lessonOptions.gradedPhases[0],
+      ),
+    )
   }
 
   async function handleAnswer(payload: {
@@ -233,6 +249,7 @@ function App() {
   }) {
     if (!progress) return
     const checkpointCards = cardsForCheckpoint(lessonCards, progress.checkpoint)
+    const lessonOptions = await getLessonExerciseOptions(progress.topicId)
     await persist(
       advanceAfterQuestion(
         progress,
@@ -240,6 +257,7 @@ function App() {
         payload,
         finalCheckpointFor(lessonCards.length),
         learningCheckpointCount(lessonCards.length),
+        lessonOptions,
       ),
     )
   }
@@ -347,20 +365,53 @@ function App() {
 
   if (screen === 'parent-home') {
     return (
-      <ParentHomeScreen
-        topics={topics}
-        activeTopicId={activeTopic?.id ?? ''}
-        pendingRedeemCount={pendingRedeems.length}
-        onBack={() => setScreen('home')}
-        onAddFlashcards={() => setScreen('parent-add')}
-        onManageGifts={() => setScreen('parent-gifts')}
-        onSelectTopic={(topicId) => {
-          void (async () => {
-            await setActiveTopicId(topicId)
-            await refreshSummary(topicId)
-          })()
-        }}
-      />
+      <>
+        <ParentHomeScreen
+          topics={topics}
+          activeTopicId={activeTopic?.id ?? ''}
+          exerciseConfigsByTopic={exerciseConfigsByTopic}
+          pendingRedeemCount={pendingRedeems.length}
+          onBack={() => {
+            setError('')
+            setScreen('home')
+          }}
+          onAddFlashcards={() => setScreen('parent-add')}
+          onManageGifts={() => setScreen('parent-gifts')}
+          onSelectTopic={(topicId) => {
+            void (async () => {
+              await setActiveTopicId(topicId)
+              await refreshSummary(topicId)
+            })()
+          }}
+          onToggleExercise={(topicId, exerciseId, enabled) => {
+            void (async () => {
+              try {
+                setError('')
+                const next = await setTopicExerciseEnabled(
+                  topicId,
+                  exerciseId,
+                  enabled,
+                )
+                setExerciseConfigsByTopic((previous) => ({
+                  ...previous,
+                  [topicId]: next,
+                }))
+              } catch (caught) {
+                setError(
+                  caught instanceof Error
+                    ? caught.message
+                    : 'Không thể cập nhật dạng bài.',
+                )
+              }
+            })()
+          }}
+        />
+        {error && (
+          <p className="error-message floating-error" role="alert">
+            {error}
+          </p>
+        )}
+      </>
     )
   }
 

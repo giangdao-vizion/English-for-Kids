@@ -1,23 +1,35 @@
 import type { Topic } from '@english-for-kids/shared'
+import {
+  exercisesForCategory,
+  type TopicExerciseConfig,
+} from '../lesson/exercises'
 
 type ParentHomeScreenProps = {
   topics: Topic[]
   activeTopicId: string
+  exerciseConfigsByTopic: Record<string, TopicExerciseConfig[]>
   pendingRedeemCount: number
   onBack: () => void
   onAddFlashcards: () => void
   onManageGifts: () => void
   onSelectTopic: (topicId: string) => void
+  onToggleExercise: (
+    topicId: string,
+    exerciseId: string,
+    enabled: boolean,
+  ) => void
 }
 
 export function ParentHomeScreen({
   topics,
   activeTopicId,
+  exerciseConfigsByTopic,
   pendingRedeemCount,
   onBack,
   onAddFlashcards,
   onManageGifts,
   onSelectTopic,
+  onToggleExercise,
 }: ParentHomeScreenProps) {
   const activeTopic = topics.find((topic) => topic.id === activeTopicId)
 
@@ -29,7 +41,7 @@ export function ParentHomeScreen({
         </button>
         <div className="parent-header-copy">
           <strong>Phụ huynh</strong>
-          <span>Chọn chủ đề rồi bấm Xong để về học</span>
+          <span>Chọn chủ đề, chỉnh bài tập, rồi bấm Xong</span>
         </div>
       </header>
 
@@ -52,23 +64,67 @@ export function ParentHomeScreen({
         </div>
         {topics.map((topic) => {
           const active = topic.id === activeTopicId
+          const configs = exerciseConfigsByTopic[topic.id] ?? []
+          const catalog = exercisesForCategory(topic.category)
+
           return (
-            <button
+            <article
               key={topic.id}
-              className={`topic-row ${active ? 'active' : ''}`}
-              type="button"
-              onClick={() => onSelectTopic(topic.id)}
+              className={`topic-block ${active ? 'active' : ''}`}
             >
-              <div className="topic-row-copy">
-                <strong>{topic.nameEnglish}</strong>
-                <span>
-                  {topic.nameVietnamese} · {topic.cardIds.length} từ
+              <button
+                className={`topic-row ${active ? 'active' : ''}`}
+                type="button"
+                onClick={() => onSelectTopic(topic.id)}
+              >
+                <div className="topic-row-copy">
+                  <strong>{topic.nameEnglish}</strong>
+                  <span>
+                    {topic.nameVietnamese} · {topic.cardIds.length} từ
+                  </span>
+                </div>
+                <span className="topic-row-status">
+                  {active ? 'Đang dùng' : 'Chọn'}
                 </span>
+              </button>
+
+              <div className="topic-exercise-list" aria-label={`Bài tập ${topic.nameEnglish}`}>
+                <p className="topic-exercise-label">Bài tập áp dụng</p>
+                {catalog.map((exercise) => {
+                  const config = configs.find(
+                    (item) => item.exerciseId === exercise.id,
+                  )
+                  const enabled = config?.enabled ?? false
+                  return (
+                    <label
+                      key={exercise.id}
+                      className={`exercise-toggle ${exercise.implemented ? '' : 'soon'}`}
+                    >
+                      <span className="exercise-toggle-copy">
+                        <strong>{exercise.nameVietnamese}</strong>
+                        <small>
+                          {exercise.implemented
+                            ? exercise.nameEnglish
+                            : 'Sắp có'}
+                        </small>
+                      </span>
+                      <input
+                        type="checkbox"
+                        checked={enabled}
+                        disabled={!exercise.implemented}
+                        onChange={(event) =>
+                          onToggleExercise(
+                            topic.id,
+                            exercise.id,
+                            event.target.checked,
+                          )
+                        }
+                      />
+                    </label>
+                  )
+                })}
               </div>
-              <span className="topic-row-status">
-                {active ? 'Đang dùng' : 'Chọn'}
-              </span>
-            </button>
+            </article>
           )
         })}
       </section>

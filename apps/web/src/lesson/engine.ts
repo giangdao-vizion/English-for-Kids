@@ -1,3 +1,4 @@
+import type { GradedPhase } from './exercises'
 import type { LessonCard } from './types'
 
 export type LessonPhase =
@@ -44,22 +45,40 @@ export type YesNoQuestion = {
 
 export const WORDS_PER_CHECKPOINT = 5
 
-const LEARN_PHASE_ORDER: LessonPhase[] = [
+export const DEFAULT_GRADED_PHASES: GradedPhase[] = [
   'listen-choose',
   'choose-word',
   'yes-no',
 ]
 
+export type LessonStartOptions = {
+  includeFlashcard?: boolean
+  gradedPhases?: GradedPhase[]
+}
+
 export function createInitialProgress(
   topicId: string,
   mode: 'learn' | 'review' = 'learn',
+  options: LessonStartOptions = {},
 ): LessonProgress {
+  const gradedPhases =
+    options.gradedPhases && options.gradedPhases.length > 0
+      ? options.gradedPhases
+      : DEFAULT_GRADED_PHASES
+  const includeFlashcard = options.includeFlashcard !== false
+  const firstPhase =
+    mode === 'review'
+      ? gradedPhases[0]
+      : includeFlashcard
+        ? 'flashcard'
+        : gradedPhases[0]
+
   return {
     topicId,
     sessionId: mode === 'review' ? `review-${topicId}` : `lesson-${topicId}`,
     mode,
     checkpoint: 1,
-    phase: mode === 'review' ? 'listen-choose' : 'flashcard',
+    phase: firstPhase,
     cardIndex: 0,
     questionIndex: 0,
     firstTryCorrect: 0,
@@ -169,6 +188,7 @@ export function calculateStars(
 export function advanceAfterFlashcards(
   progress: LessonProgress,
   totalCardsInCheckpoint: number,
+  firstGradedPhase: GradedPhase = 'listen-choose',
 ): LessonProgress {
   if (progress.cardIndex + 1 < totalCardsInCheckpoint) {
     return {
@@ -180,7 +200,7 @@ export function advanceAfterFlashcards(
 
   return {
     ...progress,
-    phase: 'listen-choose',
+    phase: firstGradedPhase,
     questionIndex: 0,
     updatedAt: new Date().toISOString(),
   }
@@ -189,15 +209,18 @@ export function advanceAfterFlashcards(
 function nextGradedPhase(
   phase: LessonPhase,
   reviewOnly: boolean,
+  gradedPhases: GradedPhase[],
 ): LessonPhase | null {
   if (reviewOnly) {
     return null
   }
-  const index = LEARN_PHASE_ORDER.indexOf(phase)
-  if (index < 0 || index >= LEARN_PHASE_ORDER.length - 1) {
+  const order =
+    gradedPhases.length > 0 ? gradedPhases : DEFAULT_GRADED_PHASES
+  const index = order.indexOf(phase as GradedPhase)
+  if (index < 0 || index >= order.length - 1) {
     return null
   }
-  return LEARN_PHASE_ORDER[index + 1]
+  return order[index + 1]
 }
 
 export function advanceAfterQuestion(
@@ -211,7 +234,14 @@ export function advanceAfterQuestion(
   },
   finalCheckpoint = 3,
   learningCheckpoints = finalCheckpoint > 1 ? finalCheckpoint - 1 : 1,
+  lessonOptions: LessonStartOptions = {},
 ): LessonProgress {
+  const gradedPhases =
+    lessonOptions.gradedPhases && lessonOptions.gradedPhases.length > 0
+      ? lessonOptions.gradedPhases
+      : DEFAULT_GRADED_PHASES
+  const includeFlashcard = lessonOptions.includeFlashcard !== false
+
   const next: LessonProgress = {
     ...progress,
     answeredQuestions: progress.answeredQuestions + 1,
@@ -235,7 +265,7 @@ export function advanceAfterQuestion(
   const reviewOnly =
     progress.checkpoint === finalCheckpoint &&
     finalCheckpoint > learningCheckpoints
-  const gradedNext = nextGradedPhase(progress.phase, reviewOnly)
+  const gradedNext = nextGradedPhase(progress.phase, reviewOnly, gradedPhases)
 
   if (gradedNext) {
     return {
@@ -252,7 +282,11 @@ export function advanceAfterQuestion(
     return {
       ...next,
       checkpoint: nextCheckpoint,
-      phase: nextIsReviewOnly ? 'listen-choose' : 'flashcard',
+      phase: nextIsReviewOnly
+        ? gradedPhases[0]
+        : includeFlashcard
+          ? 'flashcard'
+          : gradedPhases[0],
       cardIndex: 0,
       questionIndex: 0,
     }

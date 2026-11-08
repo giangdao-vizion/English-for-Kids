@@ -19,6 +19,13 @@ import {
   finalCheckpointFor,
   type LessonProgress,
 } from './lesson/engine'
+import {
+  defaultConfigsForTopic,
+  exercisesForCategory,
+  isFlashcardEnabled,
+  resolveGradedPhases,
+  type TopicExerciseConfig,
+} from './lesson/exercises'
 import type { LessonCard } from './lesson/types'
 import {
   colorForWord,
@@ -85,6 +92,7 @@ export class EnglishForKidsDatabase extends Dexie {
   meta!: EntityTable<MetaRecord, 'id'>
   gifts!: EntityTable<GiftItem, 'id'>
   redeemRequests!: EntityTable<RedeemRequest, 'id'>
+  exerciseConfigs!: EntityTable<TopicExerciseConfig, 'id'>
 
   constructor(databaseName = DATABASE_NAME) {
     super(databaseName)
@@ -120,6 +128,20 @@ export class EnglishForKidsDatabase extends Dexie {
       meta: 'id',
       gifts: 'id, active',
       redeemRequests: 'id, status, createdAt',
+    })
+
+    this.version(4).stores({
+      profiles: 'id, lastActiveAt',
+      settings: 'id',
+      topics: 'id, status, addedMonth, lastStudiedAt',
+      cards: 'id, topicId, normalizedWord, parentConfirmed',
+      wordProgress: 'id, [profileId+cardId], state, nextReviewAt, lastSeenAt',
+      lessons: 'id, topicId, completed, updatedAt',
+      images: 'id, kind',
+      meta: 'id',
+      gifts: 'id, active',
+      redeemRequests: 'id, status, createdAt',
+      exerciseConfigs: 'id, topicId, exerciseId, [topicId+exerciseId]',
     })
   }
 }
@@ -232,6 +254,7 @@ export async function loadProfile(): Promise<ChildProfile | undefined> {
 export async function ensureAnimalsDemoTopic(): Promise<Topic> {
   const existing = await db.topics.get(ANIMALS_TOPIC_ID)
   if (existing) {
+    await ensureExerciseConfigsForTopic(existing)
     return existing
   }
 
@@ -283,12 +306,129 @@ export async function ensureAnimalsDemoTopic(): Promise<Topic> {
     updatedAt: now,
   }))
 
-  await db.transaction('rw', db.topics, db.cards, async () => {
-    await db.topics.put(topic)
-    await db.cards.bulkPut(cards)
-  })
+  await db.transaction(
+    'rw',
+    db.topics,
+    db.cards,
+    db.exerciseConfigs,
+    async () => {
+      await db.topics.put(topic)
+      await db.cards.bulkPut(cards)
+      await db.exerciseConfigs.bulkPut(
+        defaultConfigsForTopic(ANIMALS_TOPIC_ID, 'animals', now),
+      )
+    },
+  )
 
   return topic
+}
+
+export async function ensureExerciseConfigsForTopic(
+  topic: Topic,
+): Promise<TopicExerciseConfig[]> {
+  const existing = await db.exerciseConfigs
+    .where('topicId')
+    .equals(topic.id)
+    .toArray()
+  const catalog = exercisesForCategory(topic.category)
+  if (existing.length >= catalog.length) {
+    return existing.sort((left, right) => left.order - right.order)
+  }
+
+  const now = timestamp()
+  const byExercise = new Map(
+    existing.map((item) => [item.exerciseId, item]),
+  )
+  const next = defaultConfigsForTopic(topic.id, topic.category, now).map(
+    (config) => byExercise.get(config.exerciseId) ?? config,
+  )
+  await db.exerciseConfigs.bulkPut(next)
+  return next.sort((left, right) => left.order - right.order)
+}
+
+export async function listExerciseConfigs(
+  topicId: string,
+): Promise<TopicExerciseConfig[]> {
+  const topic = await db.topics.get(topicId)
+  if (!topic) {
+    return []
+  }
+  return ensureExerciseConfigsForTopic(topic)
+}
+
+export async function listAllExerciseConfigs(): Promise<
+  Record<string, TopicExerciseConfig[]>
+> {
+  const topics = await listTopics()
+  const result: Record<string, TopicExerciseConfig[]> = {}
+  for (const topic of topics) {
+    result[topic.id] = await ensureExerciseConfigsForTopic(topic)
+  }
+  return result
+}
+
+export async function setTopicExerciseEnabled(
+  topicId: string,
+  exerciseId: string,
+  enabled: boolean,
+): Promise<TopicExerciseConfig[]> {
+  const topic = await db.topics.get(topicId)
+  if (!topic) {
+    throw new Error('Không tìm thấy chủ đề.')
+  }
+  const configs = await ensureExerciseConfigsForTopic(topic)
+  const definition = exercisesForCategory(topic.category).find(
+    (item) => item.id === exerciseId,
+  )
+  if (!definition) {
+    throw new Error('Dạng bài không áp dụng cho chủ đề này.')
+  }
+  if (!definition.implemented && enabled) {
+    throw new Error('Dạng bài này chưa sẵn sàng.')
+  }
+
+  const now = timestamp()
+  const next = configs.map((config) =>
+    config.exerciseId === exerciseId
+      ? {
+          ...config,
+          enabled,
+          source: 'parent_override' as const,
+          updatedAt: now,
+        }
+      : config,
+  )
+
+  // Luôn giữ ít nhất một dạng có chấm điểm đang bật.
+  const gradedEnabled = next.filter((config) => {
+    if (!config.enabled) return false
+    const def = exercisesForCategory(topic.category).find(
+      (item) => item.id === config.exerciseId,
+    )
+    return Boolean(def?.implemented && def.phase && def.phase !== 'flashcard')
+  })
+  if (gradedEnabled.length === 0) {
+    throw new Error('Cần bật ít nhất một dạng bài có chấm điểm.')
+  }
+
+  await db.exerciseConfigs.bulkPut(next)
+  return next
+}
+
+export async function getLessonExerciseOptions(topicId: string): Promise<{
+  includeFlashcard: boolean
+  gradedPhases: ReturnType<typeof resolveGradedPhases>
+  enabledExerciseIds: string[]
+}> {
+  const configs = await listExerciseConfigs(topicId)
+  const enabledExerciseIds = configs
+    .filter((config) => config.enabled)
+    .map((config) => config.exerciseId)
+  return {
+    includeFlashcard: isFlashcardEnabled(enabledExerciseIds),
+    gradedPhases: resolveGradedPhases(enabledExerciseIds),
+    enabledExerciseIds,
+  }
 }
 
 export async function getActiveTopicId(): Promise<string> {
@@ -410,7 +550,8 @@ export async function loadOrStartLesson(
     return { progress: existing, cards }
   }
 
-  const progress = createInitialProgress(activeId, 'learn')
+  const lessonOptions = await getLessonExerciseOptions(activeId)
+  const progress = createInitialProgress(activeId, 'learn', lessonOptions)
   const now = timestamp()
   const record: LessonRecord = {
     ...progress,
@@ -484,7 +625,8 @@ export async function restartLesson(
   topicId?: string,
 ): Promise<{ progress: LessonProgress; cards: LessonCard[] }> {
   const activeId = topicId ?? (await getActiveTopicId())
-  const progress = createInitialProgress(activeId)
+  const lessonOptions = await getLessonExerciseOptions(activeId)
+  const progress = createInitialProgress(activeId, 'learn', lessonOptions)
   const saved = await saveLessonProgress(progress)
   const cards = await loadLessonCards(activeId)
   return { progress: saved, cards }
@@ -576,10 +718,14 @@ export async function confirmFlashcardBatch(input: {
     db.cards,
     db.images,
     db.meta,
+    db.exerciseConfigs,
     async () => {
       await db.images.bulkPut(images)
       await db.cards.bulkPut(flashcards)
       await db.topics.put(topic)
+      await db.exerciseConfigs.bulkPut(
+        defaultConfigsForTopic(topicId, input.category, now),
+      )
       await db.meta.put({
         id: ACTIVE_TOPIC_KEY,
         value: topicId,
@@ -602,9 +748,10 @@ export async function startReviewLesson(
   }
 
   const now = timestamp()
+  const lessonOptions = await getLessonExerciseOptions(activeId)
   const progress: LessonProgress = {
-    ...createInitialProgress(activeId, 'review'),
-    phase: 'listen-choose',
+    ...createInitialProgress(activeId, 'review', lessonOptions),
+    phase: lessonOptions.gradedPhases[0],
     checkpoint: finalCheckpointFor(cards.length),
     updatedAt: now,
   }
