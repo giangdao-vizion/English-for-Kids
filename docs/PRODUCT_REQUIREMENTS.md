@@ -1,6 +1,6 @@
 # Yêu cầu sản phẩm: English for Kids
 
-Trạng thái: Đã xác nhận phạm vi MVP
+Trạng thái: Đã xác nhận phạm vi MVP và logic học/ôn tập
 Ngày cập nhật: 08/11/2026 (UTC+7)
 
 Tài liệu này là nguồn tham chiếu chính cho các quyết định sản phẩm đã được xác nhận. Không tự ý thay đổi các yêu cầu trong mục "Đã xác nhận"; mọi thay đổi mới phải được phụ huynh xác nhận trước.
@@ -258,12 +258,98 @@ Với một bộ 10 flashcard, ứng dụng phải:
 9. Cho phụ huynh chỉ định chủ đề ôn tập.
 10. Cho bé đề nghị đổi sao lấy quà.
 
-## 13. Chưa quyết định
+## 13. Logic học và ôn tập đã xác nhận
+
+### Tạo lộ trình
+
+1. Hệ thống xác định chủ đề.
+2. Chọn phần nghe và đọc theo.
+3. Chọn ba đến bốn dạng bài phù hợp.
+4. Đưa đủ 100% từ vào lộ trình.
+5. Chia thành các chặng khoảng năm từ.
+6. Lưu vị trí để bé tiếp tục sau nếu dừng giữa chừng.
+7. Sau các chặng nhỏ, tạo chặng trộn toàn bộ từ và thử thách cuối.
+
+### Thứ tự ưu tiên
+
+1. Nghe và đọc theo.
+2. Nghe rồi chọn hình.
+3. Nhận diện mặt chữ.
+4. Bài riêng phù hợp với chủ đề.
+5. Câu hỏi Yes/No hoặc tình huống.
+6. Thử thách tổng hợp.
+
+Hệ thống không bắt bé làm cả 13 dạng trong một chủ đề.
+
+### Chọn bài theo chủ đề
+
+- Con vật, đồ ăn và đồ vật: nghe chọn hình, `What is this?`, nhận diện chữ và phân loại.
+- Hành động và cảm xúc: câu hỏi tình huống, Yes/No và chuỗi hình có lời kể.
+- Màu sắc và hình dạng: nghe chọn, nhận diện màu/hình và mặt chữ.
+- Số đếm: nghe chọn, đếm và chọn số.
+- Bộ phận cơ thể: nghe chọn, chạm đúng vị trí và Yes/No.
+- Vị trí: kéo thả, câu hỏi tình huống và Yes/No.
+- Từ tổng hợp: dùng các dạng bài chung.
+
+### Xử lý câu trả lời sai
+
+1. Nói lời khuyến khích và đọc lại từ hoặc câu hỏi.
+2. Cho bé thử lần thứ hai.
+3. Nếu vẫn sai, giảm số lựa chọn hoặc chỉ đáp án.
+4. Đưa từ trở lại sau hai đến ba câu.
+5. Đánh dấu từ cần ôn.
+
+Không trừ sao và không dùng âm thanh mang tính trách phạt.
+
+### Trạng thái của từ
+
+- `Mới`: chưa học.
+- `Đang học`: đã nghe nhưng chưa trả lời đúng ổn định.
+- `Cần ôn`: từng sai hoặc lâu chưa gặp lại.
+- `Đã nhớ`: trả lời đúng ngay lần đầu trong ít nhất hai buổi học khác nhau.
+
+Một lần trả lời đúng không đủ để đánh dấu từ là `Đã nhớ`.
+
+### Lịch ôn
+
+- Sau một ngày.
+- Sau ba ngày.
+- Sau bảy ngày.
+- Sau 30 ngày.
+- Đưa vào thử thách quý sau ba tháng.
+
+Nếu bé trả lời sai, từ quay lại lịch ôn gần nhất.
+
+### Chọn từ cho bài ôn
+
+- 60% từ cần ôn hoặc hay sai.
+- 30% từ đang học.
+- 10% từ đã nhớ.
+- Không để một từ xuất hiện liên tiếp quá nhiều lần.
+
+### Hoàn thành chủ đề
+
+Chủ đề hoàn thành khi:
+
+- Bé đã được giới thiệu đủ 100% từ.
+- Mỗi từ xuất hiện trong ít nhất hai câu có chấm điểm.
+- Bé đã hoàn thành thử thách tổng hợp.
+
+Không yêu cầu tất cả từ đạt `Đã nhớ` mới được chuyển chủ đề; từ yếu tiếp tục xuất hiện trong phần ôn tập.
+
+### Quy tắc sao
+
+- Một sao khi hoàn thành bài.
+- Sao thứ hai khi đúng ít nhất 80% ngay lần đầu.
+- Sao thứ ba khi hệ thống không phải chỉ đáp án ở quá 20% số câu.
+- Bài luyện nói không tự chấm không ảnh hưởng số sao.
+- Một bài chỉ trao sao thành tích một lần.
+
+## 14. Chưa quyết định
 
 Các nội dung sau sẽ được xác nhận ở những bước tiếp theo:
 
 - Quy tắc chi tiết cho từng loại bài tập.
-- Điều kiện hoàn thành, mở khóa và học lại.
 - Mẫu giao diện trực quan của 10 màn hình.
 - Công nghệ triển khai và cơ chế lưu dữ liệu.
 - Sao lưu hoặc đồng bộ dữ liệu giữa nhiều thiết bị.
