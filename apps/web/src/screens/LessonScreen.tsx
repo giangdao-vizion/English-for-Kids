@@ -11,10 +11,11 @@ import {
 import { FEEDBACK_VOICE, LESSON_INTROS } from '../lesson/intros'
 import type { LessonCard } from '../lesson/types'
 import {
+  autoSpeak,
   canAutoSpeak,
   getSpeechSupportMessage,
   speakEnglish,
-  speakQueue,
+  speakNow,
   speakVietnamese,
   unlockSpeech,
 } from '../speech'
@@ -66,9 +67,7 @@ export function LessonScreen({
       if (cancelled) return
       setShowIntro(!seen)
       setIntroReady(true)
-      if (!seen && canAutoSpeak()) {
-        speakVietnamese(LESSON_INTROS[progress.phase].speakText)
-      }
+      // Không auto-speak intro ở đây: trên iPhone cần đọc trong sự kiện chạm.
     }
 
     void loadIntro()
@@ -78,13 +77,16 @@ export function LessonScreen({
   }, [progress.phase, progress.checkpoint])
 
   async function dismissIntro() {
-    unlockSpeech()
-    if (progress.phase !== 'result') {
-      await markLessonIntroSeen(progress.phase)
-      // Nếu lúc mở intro chưa unlock được TTS, đọc hướng dẫn ngay khi bấm bắt đầu.
-      speakVietnamese(LESSON_INTROS[progress.phase].speakText)
+    if (progress.phase === 'result') {
+      setShowIntro(false)
+      return
     }
-    window.setTimeout(() => setShowIntro(false), 1400)
+    const intro = LESSON_INTROS[progress.phase]
+    // Đọc ngay trong gesture chạm — bắt buộc với iPhone.
+    speakNow({ text: intro.speakText, lang: 'vi' })
+    await markLessonIntroSeen(progress.phase)
+    const waitMs = Math.min(4500, Math.max(1600, intro.speakText.length * 75))
+    window.setTimeout(() => setShowIntro(false), waitMs)
   }
 
   if (!introReady) {
@@ -115,10 +117,11 @@ export function LessonScreen({
             className="primary-button"
             type="button"
             onClick={() => {
+              unlockSpeech()
               void dismissIntro()
             }}
           >
-            Con hiểu rồi — bắt đầu
+            Nghe hướng dẫn và bắt đầu
           </button>
         </section>
       </main>
@@ -200,11 +203,10 @@ function phaseLabel(phase: LessonPhase): string {
   return 'Nghe và chọn'
 }
 
-function useAutoSpeak(effect: () => void, deps: unknown[]) {
+function useAutoSpeak(parts: { text: string; lang: 'en' | 'vi'; rate?: number }[], deps: unknown[]) {
   useEffect(() => {
     if (!canAutoSpeak()) return
-    const timer = window.setTimeout(effect, 120)
-    return () => window.clearTimeout(timer)
+    autoSpeak(parts)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps)
 }
@@ -228,12 +230,13 @@ function FlashcardStep({
   onNext: () => void
   onExit: () => void
 }) {
-  useAutoSpeak(() => {
-    speakQueue([
+  useAutoSpeak(
+    [
       { text: card.word, lang: 'en' },
       { text: card.meaningVietnamese, lang: 'vi' },
-    ])
-  }, [card.id])
+    ],
+    [card.id],
+  )
 
   return (
     <main className="app-shell lesson-screen">
@@ -279,8 +282,16 @@ function FlashcardStep({
         className="primary-button"
         type="button"
         onClick={() => {
-          unlockSpeech()
-          speakEnglish(card.word)
+          if (index + 1 < total) {
+            unlockSpeech()
+            onNext()
+            return
+          }
+          // Gesture cuối flashcard: mở khóa + nhắc chặng luyện rồi chuyển.
+          speakNow({
+            text: 'Bắt đầu bài nghe và chọn hình.',
+            lang: 'vi',
+          })
           onNext()
         }}
       >
@@ -325,9 +336,7 @@ function ListenChooseStep({
     [allCards, target],
   )
 
-  useAutoSpeak(() => {
-    speakEnglish(target.word)
-  }, [target.id])
+  useAutoSpeak([{ text: target.word, lang: 'en' }], [target.id])
 
   function finish(payload: {
     firstTry: boolean
@@ -335,12 +344,11 @@ function ListenChooseStep({
     revealed: boolean
     cardId: string
   }) {
-    window.setTimeout(() => onAnswer(payload), payload.revealed ? 1200 : 900)
+    window.setTimeout(() => onAnswer(payload), payload.revealed ? 1400 : 1100)
   }
 
   function handleChoose(cardId: string) {
     if (revealed) return
-    unlockSpeech()
     const correct = cardId === target.id
     const nextAttempts = attempts + 1
     setSelectedId(cardId)
@@ -348,7 +356,7 @@ function ListenChooseStep({
 
     if (correct) {
       setFeedback(FEEDBACK_VOICE.correct)
-      speakQueue([
+      speakNow([
         { text: FEEDBACK_VOICE.correct, lang: 'vi' },
         { text: target.word, lang: 'en' },
       ])
@@ -365,7 +373,7 @@ function ListenChooseStep({
       setRevealed(true)
       const revealText = FEEDBACK_VOICE.reveal(target.word)
       setFeedback(revealText)
-      speakQueue([
+      speakNow([
         { text: revealText, lang: 'vi' },
         { text: target.word, lang: 'en' },
       ])
@@ -379,7 +387,7 @@ function ListenChooseStep({
     }
 
     setFeedback(FEEDBACK_VOICE.retry)
-    speakVietnamese(FEEDBACK_VOICE.retry)
+    speakNow({ text: FEEDBACK_VOICE.retry, lang: 'vi' })
   }
 
   return (
@@ -471,13 +479,10 @@ function ChooseWordStep({
     [allCards, target],
   )
 
-  useAutoSpeak(() => {
-    speakEnglish(target.word)
-  }, [target.id])
+  useAutoSpeak([{ text: target.word, lang: 'en' }], [target.id])
 
   function handleChoose(word: string) {
     if (revealed) return
-    unlockSpeech()
     const correct = word === target.word
     const nextAttempts = attempts + 1
     setSelected(word)
@@ -485,7 +490,7 @@ function ChooseWordStep({
 
     if (correct) {
       setFeedback(FEEDBACK_VOICE.correct)
-      speakQueue([
+      speakNow([
         { text: FEEDBACK_VOICE.correct, lang: 'vi' },
         { text: target.word, lang: 'en' },
       ])
@@ -496,7 +501,7 @@ function ChooseWordStep({
           revealed: false,
           cardId: target.id,
         })
-      }, 900)
+      }, 1100)
       return
     }
 
@@ -504,7 +509,7 @@ function ChooseWordStep({
       setRevealed(true)
       const revealText = FEEDBACK_VOICE.reveal(target.word)
       setFeedback(revealText)
-      speakQueue([
+      speakNow([
         { text: revealText, lang: 'vi' },
         { text: target.word, lang: 'en' },
       ])
@@ -515,12 +520,12 @@ function ChooseWordStep({
           revealed: true,
           cardId: target.id,
         })
-      }, 1200)
+      }, 1400)
       return
     }
 
     setFeedback(FEEDBACK_VOICE.retry)
-    speakVietnamese(FEEDBACK_VOICE.retry)
+    speakNow({ text: FEEDBACK_VOICE.retry, lang: 'vi' })
   }
 
   return (
@@ -603,13 +608,10 @@ function YesNoStep({
   const [selected, setSelected] = useState<'yes' | 'no' | null>(null)
   const [feedback, setFeedback] = useState('')
 
-  useAutoSpeak(() => {
-    speakEnglish(question.prompt)
-  }, [target.id, question.prompt])
+  useAutoSpeak([{ text: question.prompt, lang: 'en' }], [target.id, question.prompt])
 
   function handleChoose(value: 'yes' | 'no') {
     if (selected) return
-    unlockSpeech()
     setSelected(value)
     const correct =
       (value === 'yes' && question.answerIsYes) ||
@@ -617,14 +619,14 @@ function YesNoStep({
     const answerLabel = question.answerIsYes ? 'Yes' : 'No'
     if (correct) {
       setFeedback(FEEDBACK_VOICE.correct)
-      speakQueue([
+      speakNow([
         { text: FEEDBACK_VOICE.correct, lang: 'vi' },
         { text: answerLabel, lang: 'en' },
       ])
     } else {
       const text = FEEDBACK_VOICE.wrongYesNo(answerLabel)
       setFeedback(text)
-      speakQueue([
+      speakNow([
         { text, lang: 'vi' },
         { text: answerLabel, lang: 'en' },
       ])
@@ -636,7 +638,7 @@ function YesNoStep({
         revealed: !correct,
         cardId: target.id,
       })
-    }, correct ? 900 : 1200)
+    }, correct ? 1100 : 1400)
   }
 
   return (

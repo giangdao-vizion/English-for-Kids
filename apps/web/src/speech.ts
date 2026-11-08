@@ -3,10 +3,14 @@ let vietnameseVoice: SpeechSynthesisVoice | null = null
 let unlocked = false
 let speakTimer: number | null = null
 let queueTimer: number | null = null
+let keepAliveTimer: number | null = null
 
 function isIOS(): boolean {
   if (typeof navigator === 'undefined') return false
-  return /iPad|iPhone|iPod/.test(navigator.userAgent)
+  return (
+    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+  )
 }
 
 function pickVoice(
@@ -32,6 +36,36 @@ function assignVoices(): void {
   vietnameseVoice = pickVoice(voices, 'vi')
 }
 
+function clearSpeakTimers(): void {
+  if (speakTimer !== null) {
+    window.clearTimeout(speakTimer)
+    speakTimer = null
+  }
+  if (queueTimer !== null) {
+    window.clearTimeout(queueTimer)
+    queueTimer = null
+  }
+}
+
+function startKeepAlive(): void {
+  if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+    return
+  }
+  if (keepAliveTimer !== null) {
+    return
+  }
+  // iOS thường tự pause speechSynthesis khi không có tương tác.
+  keepAliveTimer = window.setInterval(() => {
+    try {
+      if (window.speechSynthesis.paused) {
+        window.speechSynthesis.resume()
+      }
+    } catch {
+      // ignore
+    }
+  }, 2500)
+}
+
 export function prepareVoices(): void {
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
     return
@@ -40,24 +74,38 @@ export function prepareVoices(): void {
   window.speechSynthesis.addEventListener('voiceschanged', assignVoices)
 }
 
-/** Gọi trong sự kiện chạm/click để mở khóa TTS trên iPhone. */
-export function unlockSpeech(): void {
+/**
+ * Gọi trong cùng sự kiện chạm/click.
+ * Trên iPhone phải speak thật (không chỉ utterance rỗng) để mở khóa ổn định.
+ */
+export function unlockSpeech(seedText = 'xin chào'): void {
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
     return
   }
   assignVoices()
-  if (unlocked) {
+  startKeepAlive()
+
+  try {
     if (window.speechSynthesis.paused) {
       window.speechSynthesis.resume()
     }
+  } catch {
+    // ignore
+  }
+
+  if (unlocked) {
     return
   }
 
   try {
-    const warmUp = new SpeechSynthesisUtterance('')
-    warmUp.volume = 0
-    warmUp.rate = 1
-    warmUp.lang = 'en-US'
+    // Speak gần như im để kích hoạt audio session trong gesture hiện tại.
+    const warmUp = new SpeechSynthesisUtterance(seedText)
+    warmUp.volume = 0.01
+    warmUp.rate = 1.1
+    warmUp.lang = vietnameseVoice?.lang ?? 'vi-VN'
+    if (vietnameseVoice) {
+      warmUp.voice = vietnameseVoice
+    }
     window.speechSynthesis.speak(warmUp)
     unlocked = true
   } catch {
@@ -69,123 +117,121 @@ export function isSpeechUnlocked(): boolean {
   return unlocked
 }
 
-/** Sau khi đã mở khóa (thường khi bấm Bắt đầu học), được phép tự đọc. */
 export function canAutoSpeak(): boolean {
   return unlocked
 }
 
-export function speakEnglish(text: string, rate = 0.85): void {
-  speak(text, englishVoice, 'en-US', rate)
-}
-
-export function speakVietnamese(text: string, rate = 0.9): void {
-  speak(text, vietnameseVoice, 'vi-VN', rate)
-}
-
-type SpeakPart = {
+export type SpeakPart = {
   text: string
   lang: 'en' | 'vi'
   rate?: number
 }
 
-/** Đọc lần lượt nhiều câu (ví dụ khen tiếng Việt rồi đọc từ tiếng Anh). */
-export function speakQueue(parts: SpeakPart[]): void {
+function buildUtterance(part: SpeakPart): SpeechSynthesisUtterance {
+  assignVoices()
+  const voice = part.lang === 'vi' ? vietnameseVoice : englishVoice
+  const lang = part.lang === 'vi' ? 'vi-VN' : 'en-US'
+  const utterance = new SpeechSynthesisUtterance(part.text)
+  utterance.lang = voice?.lang ?? lang
+  utterance.rate = part.rate ?? (part.lang === 'vi' ? 0.92 : 0.85)
+  utterance.volume = 1
+  if (voice) {
+    utterance.voice = voice
+  }
+  return utterance
+}
+
+/** Đọc ngay — ưu tiên gọi từ click/touch. */
+export function speakNow(parts: SpeakPart[] | SpeakPart): void {
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
     return
   }
-  const usable = parts.filter((part) => part.text.trim())
-  if (usable.length === 0) {
+  const list = (Array.isArray(parts) ? parts : [parts]).filter((part) =>
+    part.text.trim(),
+  )
+  if (list.length === 0) {
     return
   }
 
-  stopSpeaking()
-  assignVoices()
+  unlockSpeech(list[0].text)
+  clearSpeakTimers()
+  try {
+    window.speechSynthesis.cancel()
+  } catch {
+    // ignore
+  }
+  try {
+    window.speechSynthesis.resume()
+  } catch {
+    // ignore
+  }
 
   let index = 0
   const playNext = () => {
-    if (index >= usable.length) {
+    if (index >= list.length) {
       return
     }
-    const part = usable[index]
+    const utterance = buildUtterance(list[index])
     index += 1
-    const voice = part.lang === 'vi' ? vietnameseVoice : englishVoice
-    const lang = part.lang === 'vi' ? 'vi-VN' : 'en-US'
-    const utterance = new SpeechSynthesisUtterance(part.text)
-    const selected = voice
-    utterance.lang = selected?.lang ?? lang
-    utterance.rate = part.rate ?? (part.lang === 'vi' ? 0.92 : 0.85)
-    if (selected) {
-      utterance.voice = selected
-    }
     utterance.onend = () => {
-      queueTimer = window.setTimeout(playNext, isIOS() ? 80 : 40)
+      queueTimer = window.setTimeout(playNext, isIOS() ? 40 : 20)
     }
     utterance.onerror = () => {
-      queueTimer = window.setTimeout(playNext, 40)
+      queueTimer = window.setTimeout(playNext, 20)
     }
     window.speechSynthesis.speak(utterance)
   }
 
-  speakTimer = window.setTimeout(playNext, isIOS() ? 60 : 0)
+  // Trong gesture: chạy gần như ngay; ngoài gesture vẫn cố sau delay ngắn trên iOS.
+  playNext()
 }
 
-function speak(
-  text: string,
-  voice: SpeechSynthesisVoice | null,
-  lang: string,
-  rate: number,
-): void {
+export function speakEnglish(text: string, rate = 0.85): void {
+  speakNow({ text, lang: 'en', rate })
+}
+
+export function speakVietnamese(text: string, rate = 0.9): void {
+  speakNow({ text, lang: 'vi', rate })
+}
+
+export function speakQueue(parts: SpeakPart[]): void {
+  speakNow(parts)
+}
+
+/** Tự đọc sau khi đã unlock (ví dụ sang câu tiếp theo). */
+export function autoSpeak(parts: SpeakPart[] | SpeakPart): void {
+  if (!unlocked) {
+    return
+  }
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
     return
   }
-  if (!text.trim()) {
-    return
-  }
-
-  assignVoices()
-  if (window.speechSynthesis.paused) {
+  startKeepAlive()
+  try {
     window.speechSynthesis.resume()
+  } catch {
+    // ignore
   }
-
-  if (speakTimer !== null) {
-    window.clearTimeout(speakTimer)
-    speakTimer = null
-  }
-  if (queueTimer !== null) {
-    window.clearTimeout(queueTimer)
-    queueTimer = null
-  }
-
-  window.speechSynthesis.cancel()
-
-  const run = () => {
-    const utterance = new SpeechSynthesisUtterance(text)
-    const selected =
-      voice ?? (lang.startsWith('vi') ? vietnameseVoice : englishVoice)
-    utterance.lang = selected?.lang ?? lang
-    utterance.rate = rate
-    if (selected) {
-      utterance.voice = selected
-    }
-    window.speechSynthesis.speak(utterance)
-  }
-
-  speakTimer = window.setTimeout(run, isIOS() ? 60 : 0)
+  clearSpeakTimers()
+  // iOS hay nuốt speak ngay sau cancel; chờ một nhịp rồi đọc.
+  speakTimer = window.setTimeout(
+    () => {
+      speakNow(parts)
+    },
+    isIOS() ? 180 : 60,
+  )
 }
 
 export function stopSpeaking(): void {
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
     return
   }
-  if (speakTimer !== null) {
-    window.clearTimeout(speakTimer)
-    speakTimer = null
+  clearSpeakTimers()
+  try {
+    window.speechSynthesis.cancel()
+  } catch {
+    // ignore
   }
-  if (queueTimer !== null) {
-    window.clearTimeout(queueTimer)
-    queueTimer = null
-  }
-  window.speechSynthesis.cancel()
 }
 
 export function getSpeechSupportMessage(): string | null {
@@ -196,7 +242,7 @@ export function getSpeechSupportMessage(): string | null {
     return 'Máy này không hỗ trợ đọc chữ. Hãy dùng Safari trên iPhone.'
   }
   if (isIOS() && !unlocked) {
-    return 'Trên iPhone: bật âm lượng, tắt nút Silent, rồi bắt đầu bài để nghe.'
+    return 'Trên iPhone: bật âm lượng, tắt Silent, rồi chạm Bắt đầu để nghe.'
   }
   return null
 }

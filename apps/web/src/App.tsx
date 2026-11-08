@@ -43,7 +43,7 @@ import { ParentExerciseLibraryScreen } from './screens/ParentExerciseLibraryScre
 import { ParentGiftsScreen } from './screens/ParentGiftsScreen'
 import { ParentHomeScreen } from './screens/ParentHomeScreen'
 import { ResultScreen } from './screens/ResultScreen'
-import { prepareVoices, stopSpeaking, unlockSpeech } from './speech'
+import { prepareVoices, speakNow, stopSpeaking } from './speech'
 
 type Screen =
   | 'home'
@@ -143,7 +143,7 @@ function App() {
 
   async function handleSetup(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    unlockSpeech()
+    speakNow({ text: 'Bắt đầu bài học.', lang: 'vi' })
     const displayName = name.trim()
     if (!displayName) {
       setError('Ba mẹ hãy nhập tên của bé.')
@@ -170,7 +170,8 @@ function App() {
 
   async function handleContinueLesson() {
     setError('')
-    unlockSpeech()
+    // Đọc ngay trong gesture để iPhone mở khóa TTS ổn định.
+    speakNow({ text: 'Bắt đầu bài học.', lang: 'vi' })
     try {
       const started = await loadOrStartLesson(activeTopic?.id)
       setProgress(normalizeProgress(started.progress))
@@ -188,7 +189,7 @@ function App() {
 
   async function handleReview() {
     setError('')
-    unlockSpeech()
+    speakNow({ text: 'Bắt đầu ôn tập.', lang: 'vi' })
     try {
       const started = await startReviewLesson(activeTopic?.id)
       setProgress(normalizeProgress(started.progress))
@@ -206,7 +207,7 @@ function App() {
 
   async function handleRestartLesson() {
     setError('')
-    unlockSpeech()
+    speakNow({ text: 'Học lại từ đầu.', lang: 'vi' })
     try {
       const started = await restartLesson(activeTopic?.id)
       setProgress(normalizeProgress(started.progress))
