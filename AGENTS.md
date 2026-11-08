@@ -12,7 +12,8 @@ Hướng dẫn cho agent khi làm việc trên project **English-for-Kids**.
 
 - Các yêu cầu sản phẩm đã được phụ huynh xác nhận được lưu tại `docs/PRODUCT_REQUIREMENTS.md`.
 - Quy trình, giai đoạn và trạng thái dự án được theo dõi tại `flow_project.md`.
-- Phải đọc hai tài liệu này trước khi thiết kế hoặc triển khai tính năng.
+- Cấu hình Google Cloud không chứa bí mật được lưu tại `docs/GOOGLE_CLOUD_SETUP.md`.
+- Phải đọc các tài liệu này trước khi thiết kế hoặc triển khai tính năng.
 - Không tự ý thay đổi các mục đã xác nhận; ghi lại quyết định mới sau khi có xác nhận của phụ huynh.
 - Tuyệt đối không lưu API key hoặc thông tin bí mật vào mã nguồn, tài liệu, log hay lịch sử Git.
 

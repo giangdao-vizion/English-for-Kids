@@ -128,15 +128,26 @@ Kết quả:
 
 ### Giai đoạn 9 — Kiến trúc kỹ thuật
 
-Trạng thái: `Đang đề xuất`
+Trạng thái: `Đang thực hiện`
 
-Nội dung cần xác nhận:
+Đã thiết lập:
 
-- Hình thức ứng dụng trên iPhone.
-- Cách lưu dữ liệu và sao lưu.
-- Phần máy chủ bảo vệ API key.
-- Cách phát giọng Anh–Mỹ và tiếng Việt.
-- Cách hoạt động khi mất Internet.
+- Project Google Cloud riêng: `english-for-kids-20261108`.
+- Firebase Hosting cho PWA.
+- Cloud Run cho backend.
+- Secret Manager cho Gemini API key.
+- Runtime service account riêng.
+- Budget cảnh báo 25.000 VND/tháng.
+
+Nội dung còn cần hoàn thành:
+
+- Chốt cách lưu dữ liệu và sao lưu trên iPhone.
+- Chốt cách phát giọng Anh–Mỹ và tiếng Việt.
+- Chốt chi tiết hoạt động khi mất Internet.
+- Xây và triển khai backend với `min instances = 0`, `max instances = 1`.
+- Xây và triển khai PWA.
+
+Chi tiết hạ tầng được lưu tại `docs/GOOGLE_CLOUD_SETUP.md`.
 
 ### Giai đoạn 10 — Mô hình dữ liệu và hợp đồng API
 
