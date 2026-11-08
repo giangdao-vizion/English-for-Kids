@@ -42,6 +42,7 @@ export function ParentHomeScreen({
   const [pickerTopicId, setPickerTopicId] = useState<string | null>(null)
   const [addable, setAddable] = useState<ExerciseDefinition[]>([])
   const [pickerLoading, setPickerLoading] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
 
   async function openPicker(topicId: string) {
     setPickerTopicId(topicId)
@@ -54,15 +55,64 @@ export function ParentHomeScreen({
     }
   }
 
+  function runMenuAction(action: () => void) {
+    setMenuOpen(false)
+    action()
+  }
+
   return (
     <main className="app-shell parent-screen">
-      <header className="parent-header">
+      <header className="parent-header has-menu">
         <button className="back-chip" type="button" onClick={onBack}>
           ‹
         </button>
         <div className="parent-header-copy">
           <strong>Phụ huynh</strong>
-          <span>Chọn chủ đề, chỉnh bài tập, rồi bấm Xong</span>
+          <span>Thêm flashcard, chọn chủ đề, rồi về học</span>
+        </div>
+        <div className="parent-menu">
+          <button
+            className={`parent-menu-button ${menuOpen ? 'open' : ''}`}
+            type="button"
+            aria-label="Menu quản lý"
+            aria-expanded={menuOpen}
+            aria-haspopup="menu"
+            onClick={() => setMenuOpen((open) => !open)}
+          >
+            <span aria-hidden="true">⋮</span>
+            {pendingRedeemCount > 0 && (
+              <span className="parent-menu-dot" aria-hidden="true" />
+            )}
+          </button>
+          {menuOpen && (
+            <>
+              <button
+                className="parent-menu-backdrop"
+                type="button"
+                aria-label="Đóng menu"
+                onClick={() => setMenuOpen(false)}
+              />
+              <div className="parent-menu-popup" role="menu">
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => runMenuAction(onManageExercises)}
+                >
+                  Thư viện bài tập
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => runMenuAction(onManageGifts)}
+                >
+                  Quản lý quà
+                  {pendingRedeemCount > 0
+                    ? ` (${pendingRedeemCount} chờ duyệt)`
+                    : ''}
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </header>
 
@@ -71,13 +121,6 @@ export function ParentHomeScreen({
         <p>Chọn ảnh, AI phân tích giúp, ba mẹ chỉ xác nhận rồi giao bài.</p>
         <button className="primary-button" type="button" onClick={onAddFlashcards}>
           Thêm flashcard
-        </button>
-        <button className="secondary-button" type="button" onClick={onManageExercises}>
-          Thư viện bài tập
-        </button>
-        <button className="secondary-button" type="button" onClick={onManageGifts}>
-          Quản lý quà
-          {pendingRedeemCount > 0 ? ` (${pendingRedeemCount} chờ duyệt)` : ''}
         </button>
       </section>
 

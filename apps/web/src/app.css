@@ -459,6 +459,87 @@
   justify-self: start;
 }
 
+.parent-menu {
+  position: relative;
+  justify-self: end;
+  z-index: 20;
+}
+
+.parent-menu-button {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid #e1e4ee;
+  border-radius: 13px;
+  background: #fff;
+  color: #222a42;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.parent-menu-button.open {
+  border-color: #4f6de8;
+  background: #eef2ff;
+  color: #3d56c5;
+}
+
+.parent-menu-dot {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #d45b4d;
+}
+
+.parent-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 21;
+  border: 0;
+  background: transparent;
+  cursor: default;
+}
+
+.parent-menu-popup {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 22;
+  display: grid;
+  min-width: 220px;
+  padding: 8px;
+  border: 1px solid #e1e4ee;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 12px 28px rgba(34, 42, 66, 0.12);
+}
+
+.parent-menu-popup button {
+  display: grid;
+  align-items: center;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: #222a42;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.parent-menu-popup button:hover,
+.parent-menu-popup button:focus-visible {
+  background: #eef2ff;
+  color: #3d56c5;
+}
+
 .lesson-header-main {
   display: grid;
   gap: 10px;
@@ -825,6 +906,11 @@
   gap: 12px;
   align-items: center;
   flex: 0 0 auto;
+  position: relative;
+}
+
+.parent-header.has-menu {
+  grid-template-columns: 42px minmax(0, 1fr) 42px;
 }
 
 .parent-header-copy {

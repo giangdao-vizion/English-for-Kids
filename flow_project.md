@@ -204,7 +204,8 @@ Kết quả Giai đoạn 1:
 - Đã thêm icon PNG để cài lên màn hình chính iPhone.
 - Đã dựng luồng Animals mẫu: làm quen flashcard → nghe và chọn → chọn từ đúng → yes/no, chấm sao, lưu tiến độ và tiếp tục bài đang dở.
 - Chặng ôn trộn cuối chủ đề và chế độ Ôn tập chỉ dùng nghe và chọn (nhanh, tập trung nghe).
-- Thư viện bài tập trung tâm (màn phụ huynh): xem dạng Sẵn sàng / Sắp có; dạng sẵn sàng đã có dữ liệu tạo câu hỏi.
+- Trang phụ huynh ưu tiên nút Thêm flashcard; các mục quản lý gom vào menu ⋮ góc phải (Thư viện bài tập, Quản lý quà…).
+- Thư viện bài tập: xem dạng Sẵn sàng / Sắp có; dạng sẵn sàng đã có dữ liệu tạo câu hỏi.
 - Dưới mỗi chủ đề: danh sách bài gắn sẵn mặc định (collapse); mở rộng để +thêm từ thư viện hoặc vuốt trái xoá. Buổi học chỉ chạy các bài đã gắn.
 - TTS dùng Web Speech API; trên iPhone phải chạm nút ♪ (hoặc bắt đầu bài) để mở khóa âm thanh; Silent switch và volume ảnh hưởng phát tiếng.
 - Đã mở khu vực phụ huynh (giữ 1 giây), thêm flashcard JPG/PNG, gọi AI phân tích (Cloud Run + Gemini), phụ huynh chỉ xác nhận/sửa khi sai.
