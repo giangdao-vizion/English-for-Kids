@@ -1,6 +1,6 @@
 # Yêu cầu sản phẩm: English for Kids
 
-Trạng thái: Đã xác nhận phạm vi MVP và logic học/ôn tập
+Trạng thái: Đã xác nhận phạm vi MVP, logic học/ôn tập và cơ chế phân tích AI
 Ngày cập nhật: 08/11/2026 (UTC+7)
 
 Tài liệu này là nguồn tham chiếu chính cho các quyết định sản phẩm đã được xác nhận. Không tự ý thay đổi các yêu cầu trong mục "Đã xác nhận"; mọi thay đổi mới phải được phụ huynh xác nhận trước.
@@ -345,7 +345,76 @@ Không yêu cầu tất cả từ đạt `Đã nhớ` mới được chuyển ch
 - Bài luyện nói không tự chấm không ảnh hưởng số sao.
 - Một bài chỉ trao sao thành tích một lần.
 
-## 14. Chưa quyết định
+## 14. Cơ chế phân tích flashcard một lần
+
+Mỗi bộ flashcard được phân tích bằng một yêu cầu AI. AI tạo một gói dữ liệu dùng chung; hệ thống sử dụng các mẫu có sẵn để tạo bài, chấm điểm và ôn tập mà không gọi AI thêm.
+
+### Luồng xử lý
+
+1. Phụ huynh chọn tối đa 20 flashcard.
+2. Hệ thống kiểm tra ảnh trùng hoặc quá mờ.
+3. Gửi toàn bộ ảnh trong một yêu cầu AI.
+4. Kiểm tra cấu trúc dữ liệu trả về và đánh dấu nội dung không chắc chắn.
+5. Phụ huynh xem và xác nhận một lần.
+6. Lưu dữ liệu đã xác nhận trên thiết bị.
+7. Tạo các bài học từ dữ liệu đã lưu bằng quy tắc có sẵn.
+
+AI chỉ được gọi lại khi phụ huynh chủ động chọn `Phân tích lại`.
+
+### Dữ liệu chung của chủ đề
+
+- Tên chủ đề bằng tiếng Anh và tiếng Việt.
+- Loại chủ đề.
+- Tháng thêm.
+- Danh sách flashcard.
+- Các dạng bài và thứ tự đề xuất.
+- Câu hỏi tình huống chung.
+- Nội dung chuỗi hình có lời kể.
+- Danh sách nội dung AI không chắc chắn.
+
+### Dữ liệu của flashcard
+
+- Hình gốc.
+- Từ tiếng Anh nhận diện được.
+- Từ đã chuẩn hóa.
+- Nghĩa tiếng Việt.
+- Loại từ.
+- Thuộc tính như màu sắc, hành động, cảm xúc hoặc vị trí.
+- Câu ví dụ tiếng Anh ngắn và bản dịch.
+- Một câu Yes/No đúng và một câu sai.
+- Câu hỏi tình huống nếu phù hợp.
+- Các dạng bài có thể sử dụng.
+- Mức độ chắc chắn của AI.
+
+### Tạo bài từ dữ liệu đã lưu
+
+- AI không tạo lại mọi câu hỏi trong mỗi buổi học.
+- Hệ thống dùng dữ liệu ngữ nghĩa và mẫu bài để tạo câu hỏi tại thiết bị.
+- Phụ huynh sửa từ, nghĩa, chủ đề, loại từ hoặc câu ví dụ thì hệ thống cập nhật câu hỏi liên quan mà không gọi AI.
+- Chỉ gọi lại AI khi thay toàn bộ hình, kết quả sai nghiêm trọng hoặc phụ huynh chủ động yêu cầu.
+
+### Xác nhận tối giản
+
+Màn hình xác nhận mặc định chỉ hiển thị:
+
+- Chủ đề.
+- Danh sách từ và nghĩa.
+- Những mục cần kiểm tra.
+- Chuỗi bài đề xuất.
+
+Câu tình huống, câu Yes/No và dữ liệu nâng cao nằm trong mục `Xem chi tiết`. Nút `Xác nhận tất cả và giao bài` lưu toàn bộ gói dữ liệu.
+
+### Tiết kiệm và bảo mật
+
+- Một bộ ảnh tương ứng một lần gọi AI.
+- Không gọi AI khi bé học hoặc ôn tập.
+- Không tự động thử lại nhiều lần khi API lỗi.
+- Phát hiện ảnh đã nhập trước khi gọi AI.
+- Lưu kết quả để sử dụng lâu dài.
+- API key chỉ nằm phía máy chủ, không đặt trong ứng dụng trên iPhone.
+- Không gửi thông tin cá nhân của bé cùng flashcard.
+
+## 15. Chưa quyết định
 
 Các nội dung sau sẽ được xác nhận ở những bước tiếp theo:
 
