@@ -1,0 +1,451 @@
+# Yêu cầu sản phẩm: English for Kids
+
+Trạng thái: Đã xác nhận phạm vi MVP, logic học/ôn tập, cơ chế AI và mô hình dữ liệu
+Ngày cập nhật: 08/11/2026 (UTC+7)
+
+Tài liệu này là nguồn tham chiếu chính cho các quyết định sản phẩm đã được xác nhận. Không tự ý thay đổi các yêu cầu trong mục "Đã xác nhận"; mọi thay đổi mới phải được phụ huynh xác nhận trước.
+
+## 1. Mục tiêu
+
+Ứng dụng giúp bé 5 tuổi học tiếng Anh từ các hình flashcard do phụ huynh cung cấp, với số thao tác của phụ huynh và của bé ít nhất có thể.
+
+Quy trình chính:
+
+1. Phụ huynh tải lên một hoặc nhiều hình flashcard có sẵn từ tiếng Anh.
+2. Hệ thống nhận diện từ, chủ đề và nghĩa tiếng Việt.
+3. Phụ huynh kiểm tra và xác nhận kết quả.
+4. Hệ thống tự chọn chuỗi bài tập phù hợp với chủ đề.
+5. Phụ huynh có thể bật hoặc tắt từng dạng bài khi cần.
+6. Bé học theo lộ trình, được chấm đúng/sai và nhận sao.
+7. Bé dùng sao để đề nghị đổi quà; phụ huynh xác nhận trước khi đổi.
+
+## 2. Đối tượng và nguyên tắc trải nghiệm
+
+- Phiên bản đầu dành cho một bé 5 tuổi.
+- Thiết bị mục tiêu chính của MVP là iPhone 14 Pro Max chạy iOS 17.
+- Giao diện vẫn cần thích ứng với điện thoại và máy tính bảng.
+- Ngôn ngữ hướng dẫn là tiếng Việt; ngôn ngữ bé học là tiếng Anh.
+- Hình ảnh và nút phải lớn, mỗi màn hình chỉ có một hành động chính.
+- Bé không cần tài khoản, mật khẩu hoặc PIN.
+- Không có quảng cáo hoặc liên kết gây xao lãng.
+- Khu vực phụ huynh nằm ở một góc, hiển thị nhỏ và mở bằng thao tác giữ 1 giây.
+- Kho quà chỉ hiển thị bằng icon hộp quà nhỏ ở một góc của trang chính.
+
+## 3. Flashcard và chủ đề
+
+- Đầu vào chính là hình flashcard đã có từ tiếng Anh.
+- MVP nhận ảnh JPG và PNG; chưa nhận PDF hoặc Word.
+- Một lần tải có thể gồm một hoặc nhiều hình.
+- Mỗi lần phân tích hỗ trợ tối đa 20 flashcard.
+- Hệ thống giữ hình gốc, đọc từ tiếng Anh, đề xuất nghĩa tiếng Việt và nhận diện chủ đề.
+- Hệ thống phát hiện hình mờ, từ không chắc chắn và từ trùng.
+- Nếu bộ ảnh có nhiều chủ đề, hệ thống tự chia thành các chủ đề riêng để phụ huynh xác nhận.
+- Phụ huynh phải xác nhận từ vựng và chủ đề trước khi lưu.
+- Chủ đề được tự động lưu theo tháng thêm vào.
+- Phụ huynh có thể sửa từ, nghĩa, hình hoặc chủ đề trước khi xác nhận.
+
+## 4. Chuỗi bài tập
+
+Hệ thống tự đề xuất chuỗi bài tập theo loại chủ đề. Phụ huynh có thể bật hoặc tắt từng dạng bài.
+
+Chuỗi tiêu chuẩn:
+
+1. Xem và nghe flashcard.
+2. Nghe và chọn hình.
+3. Ghép cặp.
+4. Trò chơi phù hợp với chủ đề.
+5. Thử thách cuối.
+
+Ví dụ bài theo chủ đề:
+
+- Con vật, đồ ăn, đồ vật: nghe và chọn, ghép cặp, tìm hình.
+- Màu sắc: chọn hoặc kéo đúng màu.
+- Số đếm: đếm và chọn đáp án.
+- Hình dạng: nhận diện và ghép hình.
+- Bộ phận cơ thể: nghe và chạm đúng vị trí.
+- Vị trí: kéo vật vào trên, dưới, trong hoặc ngoài.
+- Hành động: chọn hình thể hiện đúng hành động.
+- Cảm xúc: chọn khuôn mặt phù hợp.
+
+Khi bé trả lời sai, ứng dụng không phạt. Ứng dụng đọc lại từ, cho thử lại và đưa từ đó vào nhóm cần ôn.
+
+## 5. Quy tắc bao phủ toàn bộ từ
+
+Mỗi chủ đề phải dạy đủ 100% từ đã được phụ huynh xác nhận.
+
+- Chủ đề có 10 flashcard thì lộ trình phải dạy đủ 10 từ.
+- Chủ đề có 20 flashcard thì lộ trình phải dạy đủ 20 từ.
+- Hệ thống được chia nội bộ thành các chặng nhỏ, mặc định khoảng 5 từ mỗi chặng, để phù hợp khả năng tập trung của bé.
+- Chia chặng không được làm mất hoặc bỏ qua bất kỳ từ nào.
+- Hoàn thành chặng trước sẽ tự chuyển sang chặng tiếp theo.
+- Nếu bé thoát giữa chừng, lần sau tiếp tục từ vị trí đang dở.
+- Thử thách cuối chủ đề phải trộn từ của toàn bộ chủ đề.
+
+## 6. Chấm điểm và sao
+
+- Bé được chấm đúng/sai sau mỗi câu.
+- Một bài có thể trao tối đa ba sao:
+  - Một sao khi hoàn thành.
+  - Một sao khi đạt từ 80% câu đúng ngay lần chọn đầu.
+  - Một sao khi hệ thống không phải chỉ đáp án ở quá 20% số câu.
+- Sao thành tích chỉ nhận một lần cho cùng một bài để tránh lặp bài vô hạn nhằm lấy sao.
+- Học lại vẫn cập nhật tiến độ; bài ôn mới vẫn có thể trao sao.
+
+## 7. Ôn tập
+
+- Phụ huynh có thể chọn một, nhiều hoặc tất cả chủ đề để bé ôn.
+- Hệ thống cũng có thể tự đề xuất chủ đề cần ôn.
+- Bài ôn được chọn ngẫu nhiên có trọng số:
+  - 60% từ bé hay sai hoặc lâu chưa học.
+  - 30% từ đang học.
+  - 10% từ đã nhớ tốt.
+- Sau mỗi ba tháng, hệ thống tạo thử thách quý, kết hợp từ của ba tháng gần nhất và các từ cũ cần củng cố.
+
+## 8. Kho đổi quà
+
+- Phụ huynh quản lý tên quà, hình ảnh, số sao cần đổi và số lượng.
+- Ví dụ: bánh kẹo, đồ chơi, sticker, thẻ đi nhà banh.
+- Bé gửi yêu cầu đổi quà khi đủ sao.
+- Phụ huynh giữ nút xác nhận 3 giây rồi đồng ý hoặc để sau.
+- Chỉ trừ sao sau khi phụ huynh đồng ý.
+
+## 9. Mười màn hình chính đã xác nhận
+
+1. Thiết lập lần đầu: nhập tên và chọn hình đại diện.
+2. Trang chính của bé: Học tiếp, Ôn tập, icon kho quà và icon phụ huynh.
+3. Màn hình học dùng chung cho flashcard và mọi dạng bài.
+4. Kết quả buổi học.
+5. Kho quà dạng bảng gọn.
+6. Trang chính phụ huynh.
+7. Thêm và phân tích flashcard.
+8. Xác nhận chủ đề, từ vựng và chuỗi bài tập.
+9. Chủ đề, tiến độ và tạo bài ôn tập.
+10. Quản lý quà và cài đặt thu gọn.
+
+Phản hồi đúng/sai, trạng thái xử lý, cảnh báo và xác nhận là hiệu ứng hoặc hộp thoại trên các màn hình này, không tạo thêm màn hình riêng.
+
+## 10. Luồng chính
+
+### Lần đầu sử dụng
+
+`Tên và hình đại diện → Trang chính của bé`
+
+### Thêm flashcard
+
+`Giữ icon phụ huynh → Thêm flashcard → Chọn hình → Phân tích → Xác nhận → Lưu và giao bài`
+
+### Bé học
+
+`Học tiếp → Chuỗi bài trong một màn hình → Kết quả → Trang chính`
+
+### Bé ôn tập
+
+`Ôn tập → Hệ thống tự chọn từ → Chuỗi bài → Kết quả`
+
+### Phụ huynh chỉ định nội dung ôn
+
+`Phụ huynh → Chủ đề → Đánh dấu chủ đề → Giao bài ôn`
+
+### Đổi quà
+
+`Icon hộp quà → Chọn quà → Phụ huynh giữ để xác nhận → Trừ sao`
+
+## 11. Sử dụng AI và bảo mật
+
+- AI chỉ được gọi khi phân tích bộ flashcard mới hoặc khi thật sự cần tạo đề xuất mới.
+- Không gọi AI trong mỗi lần bé trả lời câu hỏi.
+- Kết quả phân tích phải được lưu để tái sử dụng.
+- Bài tập, chấm điểm và ôn tập ưu tiên dùng quy tắc có sẵn để tiết kiệm hạn mức.
+- Không ghi API key vào mã nguồn, tài liệu, lịch sử Git hoặc log.
+- API key đã chia sẻ trong hội thoại phải được thu hồi và thay bằng key mới trước khi phát triển tính năng AI.
+- Key mới phải được lưu bằng biến môi trường hoặc hệ thống quản lý bí mật.
+- MVP cần Internet khi phân tích flashcard.
+- Bài đã lưu có thể tiếp tục học khi mất mạng, tùy khả năng phát âm có sẵn trên thiết bị.
+
+## 12. Phạm vi MVP đã xác nhận
+
+### Thiết lập và dữ liệu
+
+- Một hồ sơ bé, gồm tên và hình đại diện.
+- Dữ liệu được lưu trên thiết bị.
+- Không cần tài khoản, đăng nhập hoặc PIN.
+
+### Chủ đề được nhận diện
+
+1. Con vật.
+2. Đồ ăn và thức uống.
+3. Màu sắc.
+4. Số đếm.
+5. Hình dạng.
+6. Bộ phận cơ thể.
+7. Hành động.
+8. Cảm xúc.
+9. Vị trí.
+10. Đồ vật thông dụng.
+
+Từ không thuộc các nhóm trên được đưa vào chủ đề `Từ vựng tổng hợp` và dùng các bài tập phổ thông.
+
+### Dạng bài
+
+MVP có 13 dạng bài hoặc trạng thái bài tập. Nhóm ưu tiên nghe và phản xạ:
+
+1. Hiển thị hình, đọc từ và chờ bé đọc theo; không chấm phát âm.
+2. Hiển thị hình và hỏi `What is this?`; chờ bé nói rồi phát đáp án để đối chiếu, không tự chấm.
+3. Đọc từ tiếng Anh để bé chọn hình tương ứng.
+4. Đọc từ, hiển thị hình và cho bé chọn từ viết đúng để nhận diện mặt chữ.
+5. Câu hỏi tình huống theo chủ đề, ưu tiên hành động và cảm xúc.
+6. Đọc câu hỏi Yes/No và cho bé chọn câu trả lời; ví dụ đúng ngữ pháp: `Is she crying?`.
+7. Ghép âm thanh hoặc từ với hình.
+8. Kể một câu chuyện ngắn bằng hai đến ba hình liên tiếp kèm lời đọc, sau đó hỏi bé nội dung hoặc từ đã nghe.
+9. Thử thách tổng hợp, trộn các dạng đã học và bao phủ toàn bộ từ.
+
+Nhóm chuyên biệt theo chủ đề:
+
+10. Đếm và chọn số, dành cho chủ đề số đếm.
+11. Nhận diện màu hoặc hình dạng, dành cho chủ đề màu sắc và hình dạng.
+12. Chạm đúng vị trí, dành cho chủ đề bộ phận cơ thể.
+13. Kéo và thả, dùng để đặt vị trí hoặc phân loại con vật, đồ ăn và đồ vật.
+
+Hệ thống không bắt bé làm cả 13 dạng trong một lượt. Hệ thống chọn các bài phù hợp với chủ đề, ưu tiên bài nghe, và luân phiên để tránh lặp lại.
+
+Mỗi chủ đề dùng phần nghe và đọc theo, sau đó ba đến bốn bài có chấm điểm. Các hoạt động nói chưa có nhận diện giọng nói không được dùng để tính điểm. Màn hình học là một màn hình khung dùng chung, nhưng nội dung, hướng dẫn, vùng tương tác và cách chấm phải thay đổi theo từng dạng bài.
+
+### Khả năng mở rộng bài tập
+
+- Mỗi dạng bài phải được xây dựng thành mô-đun độc lập, gồm mã, tên, chủ đề hỗ trợ, cách tạo câu hỏi, cách chấm, quy tắc trao sao, độ khó và trạng thái bật/tắt.
+- Màn hình số 10 có mục `Thư viện bài tập` để phụ huynh xem và bật/tắt các dạng bài hiện có.
+- Màn hình xác nhận chủ đề vẫn cho phép bật/tắt bài chỉ riêng cho chủ đề đó.
+- MVP không cho phụ huynh tự tạo một cơ chế trò chơi hoàn toàn mới.
+- Các dạng bài mới sẽ được lập trình và bổ sung trong những phiên bản sau, không thuộc phạm vi MVP.
+- Nhận diện và chấm câu trả lời bằng giọng nói được lưu trong danh sách nâng cấp sau MVP.
+- Video ngắn có âm thanh và câu hỏi nghe hiểu được lưu trong danh sách nâng cấp sau MVP; cần nguồn video có quyền sử dụng, lời thoại và câu hỏi đã được kiểm tra.
+
+### Âm thanh
+
+- Đọc từ bằng tiếng Anh, mặc định giọng Anh–Mỹ.
+- Đọc hướng dẫn và nghĩa bằng tiếng Việt.
+- Có nút nghe lại.
+- Không chấm phát âm của bé trong MVP.
+- Ưu tiên nghe tiếng Anh trước; chỉ đọc tiếng Việt khi giới thiệu nghĩa hoặc khi bé cần trợ giúp.
+- Bài nghe phải có khoảng chờ để bé phản xạ trước khi phát đáp án.
+
+### Ngoài phạm vi MVP
+
+- Nhiều hồ sơ bé.
+- Đồng bộ nhiều thiết bị.
+- Đăng nhập và sao lưu đám mây.
+- Đọc PDF hoặc Word.
+- Chấm phát âm hoặc nhận diện giọng nói.
+- Video nghe hiểu; MVP dùng chuỗi hai đến ba hình có lời kể thay thế.
+- Tạo hình bằng AI.
+- Báo cáo và biểu đồ phức tạp.
+- Thông báo nhắc học.
+- Xếp hạng hoặc thi đấu.
+- Bé tự tạo bài học.
+
+### Tiêu chuẩn hoàn thành MVP
+
+Với một bộ 10 flashcard, ứng dụng phải:
+
+1. Đọc và nhận diện được danh sách từ.
+2. Đề xuất chủ đề và nghĩa tiếng Việt.
+3. Cho phụ huynh sửa rồi xác nhận.
+4. Tạo lộ trình có đủ cả 10 từ.
+5. Phát âm tiếng Anh và hướng dẫn tiếng Việt.
+6. Chấm đúng/sai và trao sao.
+7. Lưu tiến độ khi đóng rồi mở lại.
+8. Đưa từ trả lời sai vào bài ôn.
+9. Cho phụ huynh chỉ định chủ đề ôn tập.
+10. Cho bé đề nghị đổi sao lấy quà.
+
+## 13. Logic học và ôn tập đã xác nhận
+
+### Tạo lộ trình
+
+1. Hệ thống xác định chủ đề.
+2. Chọn phần nghe và đọc theo.
+3. Chọn ba đến bốn dạng bài phù hợp.
+4. Đưa đủ 100% từ vào lộ trình.
+5. Chia thành các chặng khoảng năm từ.
+6. Lưu vị trí để bé tiếp tục sau nếu dừng giữa chừng.
+7. Sau các chặng nhỏ, tạo chặng trộn toàn bộ từ và thử thách cuối.
+
+### Thứ tự ưu tiên
+
+1. Nghe và đọc theo.
+2. Nghe rồi chọn hình.
+3. Nhận diện mặt chữ.
+4. Bài riêng phù hợp với chủ đề.
+5. Câu hỏi Yes/No hoặc tình huống.
+6. Thử thách tổng hợp.
+
+Hệ thống không bắt bé làm cả 13 dạng trong một chủ đề.
+
+### Chọn bài theo chủ đề
+
+- Con vật, đồ ăn và đồ vật: nghe chọn hình, `What is this?`, nhận diện chữ và phân loại.
+- Hành động và cảm xúc: câu hỏi tình huống, Yes/No và chuỗi hình có lời kể.
+- Màu sắc và hình dạng: nghe chọn, nhận diện màu/hình và mặt chữ.
+- Số đếm: nghe chọn, đếm và chọn số.
+- Bộ phận cơ thể: nghe chọn, chạm đúng vị trí và Yes/No.
+- Vị trí: kéo thả, câu hỏi tình huống và Yes/No.
+- Từ tổng hợp: dùng các dạng bài chung.
+
+### Xử lý câu trả lời sai
+
+1. Nói lời khuyến khích và đọc lại từ hoặc câu hỏi.
+2. Cho bé thử lần thứ hai.
+3. Nếu vẫn sai, giảm số lựa chọn hoặc chỉ đáp án.
+4. Đưa từ trở lại sau hai đến ba câu.
+5. Đánh dấu từ cần ôn.
+
+Không trừ sao và không dùng âm thanh mang tính trách phạt.
+
+### Trạng thái của từ
+
+- `Mới`: chưa học.
+- `Đang học`: đã nghe nhưng chưa trả lời đúng ổn định.
+- `Cần ôn`: từng sai hoặc lâu chưa gặp lại.
+- `Đã nhớ`: trả lời đúng ngay lần đầu trong ít nhất hai buổi học khác nhau.
+
+Một lần trả lời đúng không đủ để đánh dấu từ là `Đã nhớ`.
+
+### Lịch ôn
+
+- Sau một ngày.
+- Sau ba ngày.
+- Sau bảy ngày.
+- Sau 30 ngày.
+- Đưa vào thử thách quý sau ba tháng.
+
+Nếu bé trả lời sai, từ quay lại lịch ôn gần nhất.
+
+### Chọn từ cho bài ôn
+
+- 60% từ cần ôn hoặc hay sai.
+- 30% từ đang học.
+- 10% từ đã nhớ.
+- Không để một từ xuất hiện liên tiếp quá nhiều lần.
+
+### Hoàn thành chủ đề
+
+Chủ đề hoàn thành khi:
+
+- Bé đã được giới thiệu đủ 100% từ.
+- Mỗi từ xuất hiện trong ít nhất hai câu có chấm điểm.
+- Bé đã hoàn thành thử thách tổng hợp.
+
+Không yêu cầu tất cả từ đạt `Đã nhớ` mới được chuyển chủ đề; từ yếu tiếp tục xuất hiện trong phần ôn tập.
+
+### Quy tắc sao
+
+- Một sao khi hoàn thành bài.
+- Sao thứ hai khi đúng ít nhất 80% ngay lần đầu.
+- Sao thứ ba khi hệ thống không phải chỉ đáp án ở quá 20% số câu.
+- Bài luyện nói không tự chấm không ảnh hưởng số sao.
+- Một bài chỉ trao sao thành tích một lần.
+
+## 14. Cơ chế phân tích flashcard một lần
+
+Mỗi bộ flashcard được phân tích bằng một yêu cầu AI. AI tạo một gói dữ liệu dùng chung; hệ thống sử dụng các mẫu có sẵn để tạo bài, chấm điểm và ôn tập mà không gọi AI thêm.
+
+### Luồng xử lý
+
+1. Phụ huynh chọn tối đa 20 flashcard.
+2. Hệ thống kiểm tra ảnh trùng hoặc quá mờ.
+3. Gửi toàn bộ ảnh trong một yêu cầu AI.
+4. Kiểm tra cấu trúc dữ liệu trả về và đánh dấu nội dung không chắc chắn.
+5. Phụ huynh xem và xác nhận một lần.
+6. Lưu dữ liệu đã xác nhận trên thiết bị.
+7. Tạo các bài học từ dữ liệu đã lưu bằng quy tắc có sẵn.
+
+AI chỉ được gọi lại khi phụ huynh chủ động chọn `Phân tích lại`.
+
+### Dữ liệu chung của chủ đề
+
+- Tên chủ đề bằng tiếng Anh và tiếng Việt.
+- Loại chủ đề.
+- Tháng thêm.
+- Danh sách flashcard.
+- Các dạng bài và thứ tự đề xuất.
+- Câu hỏi tình huống chung.
+- Nội dung chuỗi hình có lời kể.
+- Danh sách nội dung AI không chắc chắn.
+
+### Dữ liệu của flashcard
+
+- Hình gốc.
+- Từ tiếng Anh nhận diện được.
+- Từ đã chuẩn hóa.
+- Nghĩa tiếng Việt.
+- Loại từ.
+- Thuộc tính như màu sắc, hành động, cảm xúc hoặc vị trí.
+- Câu ví dụ tiếng Anh ngắn và bản dịch.
+- Một câu Yes/No đúng và một câu sai.
+- Câu hỏi tình huống nếu phù hợp.
+- Các dạng bài có thể sử dụng.
+- Mức độ chắc chắn của AI.
+
+### Tạo bài từ dữ liệu đã lưu
+
+- AI không tạo lại mọi câu hỏi trong mỗi buổi học.
+- Hệ thống dùng dữ liệu ngữ nghĩa và mẫu bài để tạo câu hỏi tại thiết bị.
+- Phụ huynh sửa từ, nghĩa, chủ đề, loại từ hoặc câu ví dụ thì hệ thống cập nhật câu hỏi liên quan mà không gọi AI.
+- Chỉ gọi lại AI khi thay toàn bộ hình, kết quả sai nghiêm trọng hoặc phụ huynh chủ động yêu cầu.
+
+### Xác nhận tối giản
+
+Màn hình xác nhận mặc định chỉ hiển thị:
+
+- Chủ đề.
+- Danh sách từ và nghĩa.
+- Những mục cần kiểm tra.
+- Chuỗi bài đề xuất.
+
+Câu tình huống, câu Yes/No và dữ liệu nâng cao nằm trong mục `Xem chi tiết`. Nút `Xác nhận tất cả và giao bài` lưu toàn bộ gói dữ liệu.
+
+### Tiết kiệm và bảo mật
+
+- Một bộ ảnh tương ứng một lần gọi AI.
+- Không gọi AI khi bé học hoặc ôn tập.
+- Không tự động thử lại nhiều lần khi API lỗi.
+- Phát hiện ảnh đã nhập trước khi gọi AI.
+- Lưu kết quả để sử dụng lâu dài.
+- API key chỉ nằm phía máy chủ, không đặt trong ứng dụng trên iPhone.
+- Không gửi thông tin cá nhân của bé cùng flashcard.
+
+## 15. Mô hình dữ liệu đã xác nhận
+
+Ứng dụng lưu riêng các nhóm dữ liệu:
+
+- Hồ sơ bé và cài đặt.
+- Lần phân tích flashcard.
+- Chủ đề.
+- Flashcard và hình ảnh.
+- Tiến độ từng từ.
+- Buổi học và từng câu trả lời.
+- Lịch ôn.
+- Sao, quà và yêu cầu đổi quà.
+
+Quy tắc:
+
+- Mục AI có độ chắc chắn dưới 80% phải được phụ huynh kiểm tra.
+- Dữ liệu AI nguyên bản chỉ giữ đến khi xác nhận; sau đó lưu bản đã chuẩn hóa.
+- Sau khi xác nhận, xóa ảnh gốc dung lượng lớn và giữ ảnh tối ưu cùng thumbnail.
+- Dữ liệu phụ huynh chỉnh sửa luôn có ưu tiên cao nhất.
+- Một ảnh có thể chứa nhiều flashcard; hệ thống lưu vị trí từng thẻ trong ảnh.
+- Tiến độ được tách khỏi nội dung flashcard để có thể học lại mà không mất dữ liệu.
+- Mỗi cấu trúc dữ liệu có phiên bản để hỗ trợ nâng cấp ứng dụng.
+- Nếu dữ liệu không đủ cho một dạng bài, hệ thống bỏ qua dạng đó thay vì gọi AI.
+
+Gemini chỉ trả dữ liệu theo cấu trúc bắt buộc. Ứng dụng tự tạo mã, tháng, tiến độ và câu hỏi từ dữ liệu đã xác nhận.
+
+Chi tiết kỹ thuật được lưu tại `docs/DATA_MODEL.md`.
+
+## 16. Chưa quyết định
+
+Các nội dung sau sẽ được xác nhận ở những bước tiếp theo:
+
+- Quy tắc chi tiết cho từng loại bài tập.
+- Mẫu giao diện trực quan của 10 màn hình.
+- Sao lưu hoặc đồng bộ dữ liệu giữa nhiều thiết bị.
