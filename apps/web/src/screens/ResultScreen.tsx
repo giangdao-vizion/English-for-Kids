@@ -24,15 +24,14 @@ export function ResultScreen({
 
   return (
     <main className="app-shell result-screen">
-      <header className="lesson-header compact">
+      <header className="parent-header">
         <button className="back-chip" type="button" onClick={onHome}>
           ‹
         </button>
-        <div>
+        <div className="parent-header-copy">
           <strong>Hoàn thành</strong>
           <span>{topicName}</span>
         </div>
-        <span />
       </header>
 
       <section className="result-panel">

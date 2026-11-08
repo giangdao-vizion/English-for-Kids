@@ -320,16 +320,20 @@ function LessonHeader({
       <button className="back-chip" type="button" onClick={onExit}>
         ‹
       </button>
-      <div>
-        <strong>{title}</strong>
-        <span>{subtitle}</span>
-      </div>
-      <span className="progress-chip">{progressLabel}</span>
-      <div className="progress-track" aria-hidden="true">
-        <div
-          className="progress-fill"
-          style={{ width: `${Math.min(progressValue, 100)}%` }}
-        />
+      <div className="lesson-header-main">
+        <div className="lesson-header-top">
+          <div className="lesson-header-copy">
+            <strong>{title}</strong>
+            <span>{subtitle}</span>
+          </div>
+          <span className="progress-chip">{progressLabel}</span>
+        </div>
+        <div className="progress-track" aria-hidden="true">
+          <div
+            className="progress-fill"
+            style={{ width: `${Math.min(progressValue, 100)}%` }}
+          />
+        </div>
       </div>
     </header>
   )
