@@ -207,7 +207,7 @@ Kết quả Giai đoạn 1:
 - Trang phụ huynh ưu tiên nút Thêm flashcard; các mục quản lý gom vào menu ⋮ góc phải (Thư viện bài tập, Quản lý quà…).
 - Thư viện bài tập: xem dạng Sẵn sàng / Sắp có; dạng sẵn sàng đã có dữ liệu tạo câu hỏi.
 - Dưới mỗi chủ đề: danh sách bài gắn sẵn mặc định (collapse); bật/tắt áp dụng, +thêm từ thư viện, hoặc vuốt trái xoá. Buổi học chỉ chạy các bài đang bật.
-- TTS dùng Web Speech API; trên iPhone phải chạm nút ♪ (hoặc bắt đầu bài) để mở khóa âm thanh; Silent switch và volume ảnh hưởng phát tiếng.
+- TTS dùng Web Speech API; mở khóa khi bắt đầu bài. Mỗi dạng bài có hướng dẫn tiếng Việt lần đầu (lần sau bỏ qua). Vào câu tự đọc từ; đúng/sai/khen cũng tự đọc tiếng Việt.
 - Đã mở khu vực phụ huynh (giữ 1 giây), thêm flashcard JPG/PNG, gọi AI phân tích (Cloud Run + Gemini), phụ huynh chỉ xác nhận/sửa khi sai.
 - Chọn chủ đề ở trang phụ huynh không tự thoát; phụ huynh bấm **Xong — về trang học** mới quay lại màn chính.
 - Đã có ôn tập, kho quà của bé, quản lý/duyệt quà phía phụ huynh.

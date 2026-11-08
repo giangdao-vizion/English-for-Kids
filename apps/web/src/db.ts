@@ -39,6 +39,7 @@ export const DATABASE_NAME = 'english-for-kids'
 export const PROFILE_ID = 'primary-child'
 export const SETTINGS_ID = 'app-settings'
 export const ACTIVE_TOPIC_KEY = 'active-topic-id'
+export const SEEN_LESSON_INTROS_KEY = 'seen-lesson-intros'
 
 type LessonRecord = LessonProgress & {
   id: string
@@ -541,6 +542,42 @@ export async function setActiveTopicId(topicId: string): Promise<void> {
   await db.meta.put({
     id: ACTIVE_TOPIC_KEY,
     value: topicId,
+    updatedAt: timestamp(),
+  })
+}
+
+export async function hasSeenLessonIntro(phase: string): Promise<boolean> {
+  const meta = await db.meta.get(SEEN_LESSON_INTROS_KEY)
+  if (!meta?.value) {
+    return false
+  }
+  try {
+    const parsed = JSON.parse(meta.value) as string[]
+    return Array.isArray(parsed) && parsed.includes(phase)
+  } catch {
+    return false
+  }
+}
+
+export async function markLessonIntroSeen(phase: string): Promise<void> {
+  const meta = await db.meta.get(SEEN_LESSON_INTROS_KEY)
+  let seen: string[] = []
+  if (meta?.value) {
+    try {
+      const parsed = JSON.parse(meta.value) as string[]
+      if (Array.isArray(parsed)) {
+        seen = parsed
+      }
+    } catch {
+      seen = []
+    }
+  }
+  if (seen.includes(phase)) {
+    return
+  }
+  await db.meta.put({
+    id: SEEN_LESSON_INTROS_KEY,
+    value: JSON.stringify([...seen, phase]),
     updatedAt: timestamp(),
   })
 }

@@ -1,15 +1,20 @@
-import { useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { hasSeenLessonIntro, markLessonIntroSeen } from '../db'
 import {
   buildChoiceQuestion,
   buildWordChoiceQuestion,
   buildYesNoQuestion,
   cardsForCheckpoint,
+  type LessonPhase,
   type LessonProgress,
 } from '../lesson/engine'
+import { FEEDBACK_VOICE, LESSON_INTROS } from '../lesson/intros'
 import type { LessonCard } from '../lesson/types'
 import {
+  canAutoSpeak,
   getSpeechSupportMessage,
   speakEnglish,
+  speakQueue,
   speakVietnamese,
   unlockSpeech,
 } from '../speech'
@@ -41,6 +46,84 @@ export function LessonScreen({
     [cards, progress.checkpoint],
   )
   const speechHint = getSpeechSupportMessage()
+  const [introReady, setIntroReady] = useState(false)
+  const [showIntro, setShowIntro] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    setIntroReady(false)
+    setShowIntro(false)
+
+    async function loadIntro() {
+      if (progress.phase === 'result') {
+        if (!cancelled) {
+          setShowIntro(false)
+          setIntroReady(true)
+        }
+        return
+      }
+      const seen = await hasSeenLessonIntro(progress.phase)
+      if (cancelled) return
+      setShowIntro(!seen)
+      setIntroReady(true)
+      if (!seen && canAutoSpeak()) {
+        speakVietnamese(LESSON_INTROS[progress.phase].speakText)
+      }
+    }
+
+    void loadIntro()
+    return () => {
+      cancelled = true
+    }
+  }, [progress.phase, progress.checkpoint])
+
+  async function dismissIntro() {
+    unlockSpeech()
+    if (progress.phase !== 'result') {
+      await markLessonIntroSeen(progress.phase)
+      // Nếu lúc mở intro chưa unlock được TTS, đọc hướng dẫn ngay khi bấm bắt đầu.
+      speakVietnamese(LESSON_INTROS[progress.phase].speakText)
+    }
+    window.setTimeout(() => setShowIntro(false), 1400)
+  }
+
+  if (!introReady) {
+    return (
+      <main className="app-shell lesson-screen loading-state" aria-live="polite">
+        <div className="loading-dot" />
+        <p>Đang mở bài…</p>
+      </main>
+    )
+  }
+
+  if (showIntro && progress.phase !== 'result') {
+    const intro = LESSON_INTROS[progress.phase]
+    return (
+      <main className="app-shell lesson-screen">
+        <LessonHeader
+          title={topicName}
+          subtitle={`Chặng ${progress.checkpoint} · ${phaseLabel(progress.phase)}`}
+          progressValue={0}
+          progressLabel="Hướng dẫn"
+          onExit={onExit}
+        />
+        <section className="lesson-intro-panel">
+          <h1>{intro.title}</h1>
+          <p>{intro.body}</p>
+          {speechHint && <p className="speech-hint">{speechHint}</p>}
+          <button
+            className="primary-button"
+            type="button"
+            onClick={() => {
+              void dismissIntro()
+            }}
+          >
+            Con hiểu rồi — bắt đầu
+          </button>
+        </section>
+      </main>
+    )
+  }
 
   if (progress.phase === 'flashcard') {
     const card = checkpointCards[progress.cardIndex]
@@ -109,11 +192,21 @@ export function LessonScreen({
   )
 }
 
-function phaseLabel(phase: LessonProgress['phase']): string {
+function phaseLabel(phase: LessonPhase): string {
   if (phase === 'choose-word') return 'Chọn từ đúng'
   if (phase === 'yes-no') return 'Yes / No'
   if (phase === 'flashcard') return 'Làm quen từ'
+  if (phase === 'result') return 'Kết quả'
   return 'Nghe và chọn'
+}
+
+function useAutoSpeak(effect: () => void, deps: unknown[]) {
+  useEffect(() => {
+    if (!canAutoSpeak()) return
+    const timer = window.setTimeout(effect, 120)
+    return () => window.clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, deps)
 }
 
 function FlashcardStep({
@@ -135,6 +228,13 @@ function FlashcardStep({
   onNext: () => void
   onExit: () => void
 }) {
+  useAutoSpeak(() => {
+    speakQueue([
+      { text: card.word, lang: 'en' },
+      { text: card.meaningVietnamese, lang: 'vi' },
+    ])
+  }, [card.id])
+
   return (
     <main className="app-shell lesson-screen">
       <LessonHeader
@@ -154,7 +254,7 @@ function FlashcardStep({
           <button
             className="round-sound"
             type="button"
-            aria-label="Nghe tiếng Anh"
+            aria-label="Nghe lại tiếng Anh"
             onClick={() => {
               unlockSpeech()
               speakEnglish(card.word)
@@ -170,7 +270,7 @@ function FlashcardStep({
               speakVietnamese(card.meaningVietnamese)
             }}
           >
-            Tiếng Việt
+            Nghe lại
           </button>
         </div>
       </section>
@@ -225,13 +325,17 @@ function ListenChooseStep({
     [allCards, target],
   )
 
+  useAutoSpeak(() => {
+    speakEnglish(target.word)
+  }, [target.id])
+
   function finish(payload: {
     firstTry: boolean
     correct: boolean
     revealed: boolean
     cardId: string
   }) {
-    window.setTimeout(() => onAnswer(payload), payload.revealed ? 900 : 550)
+    window.setTimeout(() => onAnswer(payload), payload.revealed ? 1200 : 900)
   }
 
   function handleChoose(cardId: string) {
@@ -243,8 +347,11 @@ function ListenChooseStep({
     setAttempts(nextAttempts)
 
     if (correct) {
-      setFeedback(`Chính xác! ${target.word} – ${target.meaningVietnamese}`)
-      speakEnglish(target.word)
+      setFeedback(FEEDBACK_VOICE.correct)
+      speakQueue([
+        { text: FEEDBACK_VOICE.correct, lang: 'vi' },
+        { text: target.word, lang: 'en' },
+      ])
       finish({
         firstTry: nextAttempts === 1,
         correct: true,
@@ -256,8 +363,12 @@ function ListenChooseStep({
 
     if (nextAttempts >= 2) {
       setRevealed(true)
-      setFeedback(`Đáp án đúng là ${target.word}`)
-      speakEnglish(target.word)
+      const revealText = FEEDBACK_VOICE.reveal(target.word)
+      setFeedback(revealText)
+      speakQueue([
+        { text: revealText, lang: 'vi' },
+        { text: target.word, lang: 'en' },
+      ])
       finish({
         firstTry: false,
         correct: false,
@@ -267,8 +378,8 @@ function ListenChooseStep({
       return
     }
 
-    setFeedback('Con thử lại nhé')
-    speakVietnamese('Con thử lại nhé')
+    setFeedback(FEEDBACK_VOICE.retry)
+    speakVietnamese(FEEDBACK_VOICE.retry)
   }
 
   return (
@@ -293,7 +404,7 @@ function ListenChooseStep({
         >
           ♪
         </button>
-        <p>Chạm ♪ để nghe rồi chọn hình</p>
+        <p>Nghe từ rồi chọn hình đúng</p>
         {speechHint && <p className="speech-hint">{speechHint}</p>}
       </section>
 
@@ -360,6 +471,10 @@ function ChooseWordStep({
     [allCards, target],
   )
 
+  useAutoSpeak(() => {
+    speakEnglish(target.word)
+  }, [target.id])
+
   function handleChoose(word: string) {
     if (revealed) return
     unlockSpeech()
@@ -369,8 +484,11 @@ function ChooseWordStep({
     setAttempts(nextAttempts)
 
     if (correct) {
-      setFeedback(`Đúng rồi! ${target.word}`)
-      speakEnglish(target.word)
+      setFeedback(FEEDBACK_VOICE.correct)
+      speakQueue([
+        { text: FEEDBACK_VOICE.correct, lang: 'vi' },
+        { text: target.word, lang: 'en' },
+      ])
       window.setTimeout(() => {
         onAnswer({
           firstTry: nextAttempts === 1,
@@ -378,14 +496,18 @@ function ChooseWordStep({
           revealed: false,
           cardId: target.id,
         })
-      }, 550)
+      }, 900)
       return
     }
 
     if (nextAttempts >= 2) {
       setRevealed(true)
-      setFeedback(`Từ đúng là ${target.word}`)
-      speakEnglish(target.word)
+      const revealText = FEEDBACK_VOICE.reveal(target.word)
+      setFeedback(revealText)
+      speakQueue([
+        { text: revealText, lang: 'vi' },
+        { text: target.word, lang: 'en' },
+      ])
       window.setTimeout(() => {
         onAnswer({
           firstTry: false,
@@ -393,12 +515,12 @@ function ChooseWordStep({
           revealed: true,
           cardId: target.id,
         })
-      }, 900)
+      }, 1200)
       return
     }
 
-    setFeedback('Con thử lại nhé')
-    speakVietnamese('Con thử lại nhé')
+    setFeedback(FEEDBACK_VOICE.retry)
+    speakVietnamese(FEEDBACK_VOICE.retry)
   }
 
   return (
@@ -416,7 +538,7 @@ function ChooseWordStep({
         <button
           className="round-sound"
           type="button"
-          aria-label="Nghe từ"
+          aria-label="Nghe lại từ"
           onClick={() => {
             unlockSpeech()
             speakEnglish(target.word)
@@ -424,7 +546,7 @@ function ChooseWordStep({
         >
           ♪
         </button>
-        <p>Nhìn hình, nghe rồi chọn chữ đúng</p>
+        <p>Nghe từ rồi chọn chữ đúng</p>
         {speechHint && <p className="speech-hint">{speechHint}</p>}
       </section>
 
@@ -481,6 +603,10 @@ function YesNoStep({
   const [selected, setSelected] = useState<'yes' | 'no' | null>(null)
   const [feedback, setFeedback] = useState('')
 
+  useAutoSpeak(() => {
+    speakEnglish(question.prompt)
+  }, [target.id, question.prompt])
+
   function handleChoose(value: 'yes' | 'no') {
     if (selected) return
     unlockSpeech()
@@ -488,8 +614,21 @@ function YesNoStep({
     const correct =
       (value === 'yes' && question.answerIsYes) ||
       (value === 'no' && !question.answerIsYes)
-    setFeedback(correct ? 'Chính xác!' : `Đáp án: ${question.answerIsYes ? 'Yes' : 'No'}`)
-    speakEnglish(correct ? 'Yes' : question.answerIsYes ? 'Yes' : 'No')
+    const answerLabel = question.answerIsYes ? 'Yes' : 'No'
+    if (correct) {
+      setFeedback(FEEDBACK_VOICE.correct)
+      speakQueue([
+        { text: FEEDBACK_VOICE.correct, lang: 'vi' },
+        { text: answerLabel, lang: 'en' },
+      ])
+    } else {
+      const text = FEEDBACK_VOICE.wrongYesNo(answerLabel)
+      setFeedback(text)
+      speakQueue([
+        { text, lang: 'vi' },
+        { text: answerLabel, lang: 'en' },
+      ])
+    }
     window.setTimeout(() => {
       onAnswer({
         firstTry: true,
@@ -497,7 +636,7 @@ function YesNoStep({
         revealed: !correct,
         cardId: target.id,
       })
-    }, correct ? 550 : 900)
+    }, correct ? 900 : 1200)
   }
 
   return (
@@ -515,7 +654,7 @@ function YesNoStep({
         <button
           className="round-sound"
           type="button"
-          aria-label="Nghe câu hỏi"
+          aria-label="Nghe lại câu hỏi"
           onClick={() => {
             unlockSpeech()
             speakEnglish(question.prompt)
@@ -524,7 +663,7 @@ function YesNoStep({
           ♪
         </button>
         <h2 className="yesno-prompt">{question.prompt}</h2>
-        <p>Chạm ♪ để nghe câu hỏi</p>
+        <p>Nghe câu hỏi rồi chọn Yes hoặc No</p>
         {speechHint && <p className="speech-hint">{speechHint}</p>}
       </section>
 

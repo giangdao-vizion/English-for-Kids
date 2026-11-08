@@ -420,6 +420,32 @@
   gap: 16px;
 }
 
+.lesson-intro-panel {
+  display: grid;
+  flex: 1;
+  align-content: center;
+  justify-items: center;
+  gap: 14px;
+  text-align: center;
+  padding: 12px 4px 24px;
+}
+
+.lesson-intro-panel h1 {
+  margin: 0;
+  color: #222a42;
+  font-size: 28px;
+  line-height: 1.2;
+}
+
+.lesson-intro-panel p {
+  margin: 0;
+  max-width: 30ch;
+  color: #5e667d;
+  font-size: 16px;
+  line-height: 1.45;
+  font-weight: 650;
+}
+
 .listen-screen {
   gap: 10px;
 }
