@@ -4,6 +4,7 @@ import {
   advanceAfterFlashcards,
   advanceAfterQuestion,
   buildChoiceQuestion,
+  buildWordChoiceQuestion,
   calculateStars,
   cardsForCheckpoint,
   createInitialProgress,
@@ -59,7 +60,67 @@ describe('lesson engine', () => {
     expect(calculateStars(10, 6, 1)).toBe(1)
   })
 
-  it('completes the topic after the final checkpoint', () => {
+  it('chains listen-choose into choose-word then yes-no during learning', () => {
+    const base = {
+      ...createInitialProgress('topic-animals-demo', 'learn'),
+      checkpoint: 1,
+      phase: 'listen-choose' as const,
+      questionIndex: 4,
+    }
+
+    const afterListen = advanceAfterQuestion(
+      base,
+      5,
+      {
+        firstTry: true,
+        correct: true,
+        revealed: false,
+        cardId: animalCards[0].id,
+      },
+      3,
+      2,
+    )
+    expect(afterListen.phase).toBe('choose-word')
+    expect(afterListen.questionIndex).toBe(0)
+
+    const afterWords = advanceAfterQuestion(
+      { ...afterListen, questionIndex: 4 },
+      5,
+      {
+        firstTry: true,
+        correct: true,
+        revealed: false,
+        cardId: animalCards[1].id,
+      },
+      3,
+      2,
+    )
+    expect(afterWords.phase).toBe('yes-no')
+
+    const afterYesNo = advanceAfterQuestion(
+      { ...afterWords, questionIndex: 4 },
+      5,
+      {
+        firstTry: true,
+        correct: true,
+        revealed: false,
+        cardId: animalCards[2].id,
+      },
+      3,
+      2,
+    )
+    expect(afterYesNo.checkpoint).toBe(2)
+    expect(afterYesNo.phase).toBe('flashcard')
+  })
+
+  it('builds word choices that include the target word', () => {
+    const target = animalCards[0]
+    const question = buildWordChoiceQuestion(animalCards, target)
+    expect(question.choices).toContain(target.word)
+    expect(question.choices).toHaveLength(4)
+  })
+
+  it('completes the topic after the final mixed listening checkpoint', () => {
     const progress = advanceAfterQuestion(
       {
         ...createInitialProgress('topic-animals-demo', 'learn'),
@@ -74,6 +135,8 @@ describe('lesson engine', () => {
         revealed: false,
         cardId: animalCards[9].id,
       },
+      3,
+      2,
     )
 
     expect(progress.completed).toBe(true)

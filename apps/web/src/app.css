@@ -670,6 +670,60 @@
   opacity: 1;
 }
 
+.word-choice-grid,
+.yesno-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  width: 100%;
+}
+
+.word-choice {
+  min-height: 72px;
+  margin: 0;
+  padding: 14px 12px;
+  border: 2px solid #e1e4ee;
+  border-radius: 20px;
+  background: #fff;
+  color: #222a42;
+  font-size: 20px;
+  font-weight: 800;
+  text-transform: lowercase;
+  cursor: pointer;
+}
+
+.word-choice.correct {
+  border-color: #2f9d6a;
+  background: #eaf8f0;
+}
+
+.word-choice.wrong {
+  border-color: #d45b4d;
+  background: #fff0ed;
+}
+
+.word-choice:disabled {
+  opacity: 1;
+}
+
+.yesno-prompt {
+  margin: 0;
+  color: #222a42;
+  font-size: 26px;
+  line-height: 1.25;
+  text-align: center;
+}
+
+.speech-hint {
+  margin: 0;
+  max-width: 28ch;
+  color: #8a6a2b;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.35;
+  text-align: center;
+}
+
 .choice-emoji {
   display: grid;
   width: 58px;

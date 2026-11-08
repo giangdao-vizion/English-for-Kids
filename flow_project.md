@@ -202,7 +202,10 @@ Kết quả Giai đoạn 1:
 - Build, typecheck, lint, kiểm thử và kiểm tra dependency production đều đạt.
 - Đã triển khai bản thử tại `https://english-for-kids-20261108.web.app`.
 - Đã thêm icon PNG để cài lên màn hình chính iPhone.
-- Đã dựng luồng Animals mẫu: làm quen flashcard, nghe và chọn, chấm sao, lưu tiến độ và tiếp tục bài đang dở.
+- Đã dựng luồng Animals mẫu: làm quen flashcard → nghe và chọn → chọn từ đúng → yes/no, chấm sao, lưu tiến độ và tiếp tục bài đang dở.
+- Chặng ôn trộn cuối chủ đề và chế độ Ôn tập chỉ dùng nghe và chọn (nhanh, tập trung nghe).
+- Các dạng còn lại trong thư viện MVP (ghép cặp, kéo thả, tìm hình theo chủ đề…) xếp sau MVP; hiện chưa bật trong chuỗi học.
+- TTS dùng Web Speech API; trên iPhone phải chạm nút ♪ (hoặc bắt đầu bài) để mở khóa âm thanh; Silent switch và volume ảnh hưởng phát tiếng.
 - Đã mở khu vực phụ huynh (giữ 3 giây), thêm flashcard JPG/PNG, gọi AI phân tích (Cloud Run + Gemini), phụ huynh chỉ xác nhận/sửa khi sai.
 - Đã có ôn tập, kho quà của bé, quản lý/duyệt quà phía phụ huynh.
 

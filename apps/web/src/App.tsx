@@ -35,7 +35,7 @@ import { LessonScreen } from './screens/LessonScreen'
 import { ParentGiftsScreen } from './screens/ParentGiftsScreen'
 import { ParentHomeScreen } from './screens/ParentHomeScreen'
 import { ResultScreen } from './screens/ResultScreen'
-import { prepareVoices, stopSpeaking } from './speech'
+import { prepareVoices, stopSpeaking, unlockSpeech } from './speech'
 
 type Screen =
   | 'home'
@@ -129,6 +129,7 @@ function App() {
 
   async function handleSetup(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    unlockSpeech()
     const displayName = name.trim()
     if (!displayName) {
       setError('Ba mẹ hãy nhập tên của bé.')
@@ -155,6 +156,7 @@ function App() {
 
   async function handleContinueLesson() {
     setError('')
+    unlockSpeech()
     try {
       const started = await loadOrStartLesson(activeTopic?.id)
       setProgress(normalizeProgress(started.progress))
@@ -172,6 +174,7 @@ function App() {
 
   async function handleReview() {
     setError('')
+    unlockSpeech()
     try {
       const started = await startReviewLesson(activeTopic?.id)
       setProgress(normalizeProgress(started.progress))
@@ -189,6 +192,7 @@ function App() {
 
   async function handleRestartLesson() {
     setError('')
+    unlockSpeech()
     try {
       const started = await restartLesson(activeTopic?.id)
       setProgress(normalizeProgress(started.progress))
