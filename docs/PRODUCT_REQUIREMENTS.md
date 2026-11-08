@@ -187,23 +187,31 @@ Từ không thuộc các nhóm trên được đưa vào chủ đề `Từ vựn
 
 ### Dạng bài
 
-Các dạng dùng chung:
+MVP có tám dạng bài. Bốn dạng dùng chung:
 
-- Xem và nghe flashcard.
-- Nghe tiếng Anh và chọn hình.
-- Ghép âm thanh với hình.
-- Tìm flashcard được yêu cầu.
-- Thử thách tổng hợp.
+1. Xem và nghe flashcard, không chấm điểm.
+2. Nghe tiếng Anh và chọn hình.
+3. Ghép âm thanh hoặc từ với hình.
+4. Thử thách tổng hợp, trộn các dạng đã học và bao phủ toàn bộ từ.
 
-Các dạng theo chủ đề:
+Bốn dạng chuyên biệt:
 
-- Màu sắc: chọn đúng màu.
-- Số đếm: đếm và chọn số.
-- Hình dạng: tìm hoặc ghép hình.
-- Bộ phận cơ thể: chạm đúng vị trí.
-- Vị trí: kéo vật vào đúng vị trí.
-- Hành động và cảm xúc: chọn hình đúng.
-- Con vật, đồ ăn và đồ vật: tìm hình, ghép cặp hoặc phân loại.
+5. Đếm và chọn số, dành cho chủ đề số đếm.
+6. Nhận diện màu hoặc hình dạng, dành cho chủ đề màu sắc và hình dạng.
+7. Chạm đúng vị trí, dành cho chủ đề bộ phận cơ thể.
+8. Kéo và thả, dùng để đặt vị trí hoặc phân loại con vật, đồ ăn và đồ vật.
+
+Chủ đề hành động và cảm xúc dùng dạng nghe và chọn hình với nội dung phù hợp, không tạo thêm cơ chế riêng.
+
+Mỗi chủ đề dùng phần học flashcard và ba đến bốn bài có chấm điểm. Màn hình học là một màn hình khung dùng chung, nhưng nội dung, hướng dẫn, vùng tương tác và cách chấm phải thay đổi theo từng dạng bài.
+
+### Khả năng mở rộng bài tập
+
+- Mỗi dạng bài phải được xây dựng thành mô-đun độc lập, gồm mã, tên, chủ đề hỗ trợ, cách tạo câu hỏi, cách chấm, quy tắc trao sao, độ khó và trạng thái bật/tắt.
+- Màn hình số 10 có mục `Thư viện bài tập` để phụ huynh xem và bật/tắt các dạng bài hiện có.
+- Màn hình xác nhận chủ đề vẫn cho phép bật/tắt bài chỉ riêng cho chủ đề đó.
+- MVP không cho phụ huynh tự tạo một cơ chế trò chơi hoàn toàn mới.
+- Các dạng bài mới sẽ được lập trình và bổ sung trong những phiên bản sau, không thuộc phạm vi MVP.
 
 ### Âm thanh
 
