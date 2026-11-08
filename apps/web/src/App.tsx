@@ -1,7 +1,27 @@
 import { useEffect, useState } from 'react'
 import type { ChildProfile } from '@english-for-kids/shared'
 import './app.css'
-import { createProfile, loadProfile } from './db'
+import {
+  createProfile,
+  loadOrStartLesson,
+  loadProfile,
+  loadTopicSummary,
+  restartLesson,
+  saveLessonProgress,
+} from './db'
+import {
+  advanceAfterFlashcards,
+  advanceAfterQuestion,
+  cardsForCheckpoint,
+  type LessonProgress,
+} from './lesson/engine'
+import { animalCards } from './sample/animals'
+import { HomeScreen } from './screens/HomeScreen'
+import { LessonScreen } from './screens/LessonScreen'
+import { ResultScreen } from './screens/ResultScreen'
+import { prepareVoices, stopSpeaking } from './speech'
+
+type Screen = 'home' | 'lesson' | 'result'
 
 function App() {
   const [profile, setProfile] = useState<ChildProfile | null>(null)
@@ -9,19 +29,48 @@ function App() {
   const [name, setName] = useState('')
   const [avatar, setAvatar] = useState('fox')
   const [error, setError] = useState('')
+  const [screen, setScreen] = useState<Screen>('home')
+  const [progress, setProgress] = useState<LessonProgress | null>(null)
+  const [learnedCount, setLearnedCount] = useState(0)
+  const [totalCount, setTotalCount] = useState(animalCards.length)
+  const [topicCompleted, setTopicCompleted] = useState(false)
 
   useEffect(() => {
-    loadProfile()
-      .then((savedProfile) => {
-        setProfile(savedProfile ?? null)
-      })
-      .catch(() => {
-        setError('Không thể đọc dữ liệu đã lưu trên thiết bị.')
-      })
-      .finally(() => {
-        setLoading(false)
-      })
+    prepareVoices()
+    return () => stopSpeaking()
   }, [])
+
+  useEffect(() => {
+    async function bootstrap() {
+      try {
+        const savedProfile = await loadProfile()
+        setProfile(savedProfile ?? null)
+        if (savedProfile) {
+          const summary = await loadTopicSummary()
+          setLearnedCount(summary.learnedCount)
+          setTotalCount(summary.totalCount)
+          setTopicCompleted(summary.topic?.status === 'completed')
+          setProgress(summary.activeLesson ?? null)
+        }
+      } catch {
+        setError('Không thể đọc dữ liệu đã lưu trên thiết bị.')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    void bootstrap()
+  }, [])
+
+  async function refreshSummary() {
+    const summary = await loadTopicSummary()
+    const latestProfile = await loadProfile()
+    setProfile(latestProfile ?? null)
+    setLearnedCount(summary.learnedCount)
+    setTotalCount(summary.totalCount)
+    setTopicCompleted(summary.topic?.status === 'completed')
+    setProgress(summary.activeLesson ?? null)
+  }
 
   async function handleSetup(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -35,9 +84,69 @@ function App() {
     try {
       const savedProfile = await createProfile(displayName, avatar)
       setProfile(savedProfile)
+      await refreshSummary()
+      const lesson = await loadOrStartLesson()
+      setProgress(lesson)
+      setScreen(lesson.phase === 'result' ? 'result' : 'lesson')
     } catch {
       setError('Không thể lưu hồ sơ. Ba mẹ hãy thử lại.')
     }
+  }
+
+  async function handleContinueLesson() {
+    setError('')
+    try {
+      const lesson = await loadOrStartLesson()
+      setProgress(lesson)
+      setScreen(lesson.phase === 'result' ? 'result' : 'lesson')
+    } catch {
+      setError('Không thể mở bài học.')
+    }
+  }
+
+  async function handleRestartLesson() {
+    setError('')
+    try {
+      const lesson = await restartLesson()
+      setProgress(lesson)
+      setTopicCompleted(false)
+      setScreen('lesson')
+      await refreshSummary()
+    } catch {
+      setError('Không thể bắt đầu lại bài học.')
+    }
+  }
+
+  async function persist(next: LessonProgress) {
+    const saved = await saveLessonProgress(next)
+    setProgress(saved)
+    await refreshSummary()
+    if (saved.phase === 'result' || saved.completed) {
+      setScreen('result')
+    }
+  }
+
+  async function handleFlashcardNext() {
+    if (!progress) return
+    const checkpointCards = cardsForCheckpoint(animalCards, progress.checkpoint)
+    const next = advanceAfterFlashcards(progress, checkpointCards.length)
+    await persist(next)
+  }
+
+  async function handleAnswer(payload: {
+    firstTry: boolean
+    correct: boolean
+    revealed: boolean
+    cardId: string
+  }) {
+    if (!progress) return
+    const checkpointCards = cardsForCheckpoint(animalCards, progress.checkpoint)
+    const next = advanceAfterQuestion(
+      progress,
+      checkpointCards.length,
+      payload,
+    )
+    await persist(next)
   }
 
   if (loading) {
@@ -114,58 +223,62 @@ function App() {
     )
   }
 
+  if (screen === 'lesson' && progress && progress.phase !== 'result') {
+    return (
+      <LessonScreen
+        cards={animalCards}
+        progress={progress}
+        onFlashcardNext={() => {
+          void handleFlashcardNext()
+        }}
+        onAnswer={(payload) => {
+          void handleAnswer(payload)
+        }}
+        onExit={() => {
+          stopSpeaking()
+          setScreen('home')
+          void refreshSummary()
+        }}
+      />
+    )
+  }
+
+  if (screen === 'result' && progress) {
+    return (
+      <ResultScreen
+        progress={progress}
+        onHome={() => {
+          setScreen('home')
+          void refreshSummary()
+        }}
+        onContinue={() => {
+          void handleRestartLesson()
+        }}
+      />
+    )
+  }
+
   return (
-    <main className="app-shell home-screen">
-      <header className="child-header">
-        <div className={`child-avatar avatar-${profile.avatarImageId}`}>
-          {profile.displayName.slice(0, 1).toUpperCase()}
-        </div>
-        <div>
-          <span>Xin chào</span>
-          <strong>{profile.displayName}</strong>
-        </div>
-        <div className="star-count" aria-label={`${profile.totalStars} ngôi sao`}>
-          <span aria-hidden="true">★</span>
-          {profile.totalStars}
-        </div>
-      </header>
-
-      <section className="empty-lesson">
-        <div className="topic-art" aria-hidden="true">
-          <span>A</span>
-          <span>B</span>
-          <span>C</span>
-        </div>
-        <h1>Sẵn sàng học rồi!</h1>
-        <p>Ba mẹ hãy thêm bộ flashcard đầu tiên cho con.</p>
-        <button className="primary-button" type="button">
-          Học tiếp
-        </button>
-        <button className="secondary-button" type="button">
-          Ôn tập
-        </button>
-      </section>
-
-      <footer className="home-footer">
-        <button aria-label="Kho quà" className="corner-button" type="button">
-          <span aria-hidden="true">□</span>
-        </button>
-        <button
-          aria-label="Mở khu vực phụ huynh"
-          className="parent-button"
-          title="Giữ 3 giây để mở khu vực phụ huynh"
-          type="button"
-        >
-          Phụ huynh
-        </button>
-      </footer>
-
+    <>
+      <HomeScreen
+        profile={profile}
+        learnedCount={learnedCount}
+        totalCount={totalCount}
+        hasActiveLesson={Boolean(progress && !progress.completed)}
+        topicCompleted={topicCompleted}
+        onContinue={() => {
+          void handleContinueLesson()
+        }}
+        onRestart={() => {
+          void handleRestartLesson()
+        }}
+      />
       {error && (
-        <p className="error-message" role="alert">
+        <p className="error-message floating-error" role="alert">
           {error}
         </p>
       )}
-    </main>
+    </>
   )
 }
 

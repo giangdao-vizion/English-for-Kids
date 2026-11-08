@@ -179,7 +179,7 @@ Chi tiết được lưu tại `docs/IMPLEMENTATION_PLAN.md`.
 
 ### Giai đoạn 12 — Xây dựng MVP
 
-Trạng thái: `Đang thực hiện — Giai đoạn 1 hoàn thành, Giai đoạn 2 đang kiểm tra`
+Trạng thái: `Đang thực hiện — Giai đoạn 3: luồng Animals hoàn chỉnh`
 
 Thứ tự dự kiến:
 
@@ -202,6 +202,7 @@ Kết quả Giai đoạn 1:
 - Build, typecheck, lint, kiểm thử và kiểm tra dependency production đều đạt.
 - Đã triển khai bản thử tại `https://english-for-kids-20261108.web.app`.
 - Đã thêm icon PNG để cài lên màn hình chính iPhone.
+- Đã dựng luồng Animals mẫu: làm quen flashcard, nghe và chọn, chấm sao, lưu tiến độ và tiếp tục bài đang dở.
 
 ### Giai đoạn 13 — Kiểm thử
 

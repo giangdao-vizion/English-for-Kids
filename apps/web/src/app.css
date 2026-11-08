@@ -326,6 +326,23 @@
   transform: rotate(8deg);
 }
 
+.animals-art span {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  font-size: 28px;
+  transform: none;
+}
+
+.animals-art span:nth-child(2) {
+  transform: translateY(-10px);
+}
+
+.secondary-button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
 .home-footer {
   display: flex;
   align-items: end;
@@ -362,6 +379,256 @@
     margin: 20px auto;
     border-radius: 34px;
   }
+}
+
+.lesson-screen,
+.result-screen {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.lesson-header {
+  display: grid;
+  grid-template-columns: 42px 1fr auto;
+  grid-template-areas:
+    'back title chip'
+    'track track track';
+  gap: 8px 10px;
+  align-items: center;
+}
+
+.lesson-header.compact {
+  grid-template-areas: 'back title .';
+}
+
+.back-chip,
+.round-sound,
+.ghost-sound {
+  border: 1px solid #e1e4ee;
+  background: #fff;
+  color: #3652bc;
+  cursor: pointer;
+}
+
+.back-chip {
+  grid-area: back;
+  width: 42px;
+  height: 42px;
+  border-radius: 13px;
+  font-size: 28px;
+  line-height: 1;
+}
+
+.lesson-header > div {
+  grid-area: title;
+  display: grid;
+  gap: 2px;
+}
+
+.lesson-header strong {
+  color: #222a42;
+  font-size: 16px;
+}
+
+.lesson-header span {
+  color: #81879a;
+  font-size: 12px;
+}
+
+.progress-chip {
+  grid-area: chip;
+  color: #5e667d;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.progress-track {
+  grid-area: track;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: #e8ecf8;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 99px;
+  background: #4f6de8;
+}
+
+.flashcard-panel,
+.prompt-panel,
+.result-panel {
+  display: grid;
+  flex: 1;
+  align-content: center;
+  justify-items: center;
+  text-align: center;
+  gap: 12px;
+}
+
+.animal-hero {
+  display: grid;
+  width: min(100%, 250px);
+  aspect-ratio: 1;
+  place-items: center;
+  border-radius: 28px;
+}
+
+.animal-hero span {
+  font-size: 108px;
+  line-height: 1;
+}
+
+.flashcard-panel h1,
+.result-panel h1 {
+  margin: 0;
+  color: #222a42;
+  font-size: 34px;
+  text-transform: lowercase;
+}
+
+.flashcard-panel p,
+.prompt-panel p,
+.result-panel p {
+  margin: 0;
+  color: #747b91;
+}
+
+.speech-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+}
+
+.round-sound {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #4f6de8;
+  color: #fff;
+  border: 0;
+  font-size: 24px;
+}
+
+.round-sound.large {
+  width: 78px;
+  height: 78px;
+  font-size: 30px;
+}
+
+.ghost-sound {
+  min-height: 44px;
+  border-radius: 14px;
+  padding: 0 14px;
+  font-weight: 750;
+}
+
+.choice-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.choice-card {
+  display: grid;
+  min-height: 128px;
+  place-items: center;
+  gap: 8px;
+  border: 2px solid #e1e4ee;
+  border-radius: 20px;
+  background: #fff;
+  color: #222a42;
+  cursor: pointer;
+}
+
+.choice-card.correct {
+  border-color: #2f9d6a;
+  background: #eaf8f0;
+}
+
+.choice-card.wrong {
+  border-color: #d45b4d;
+  background: #fff0ed;
+}
+
+.choice-emoji {
+  display: grid;
+  width: 58px;
+  height: 58px;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 30px;
+}
+
+.lesson-feedback {
+  margin: 0;
+  border-radius: 14px;
+  padding: 12px 14px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 750;
+}
+
+.lesson-feedback.ok {
+  background: #eaf8f0;
+  color: #1f6b48;
+}
+
+.lesson-feedback.retry {
+  background: #fff0ed;
+  color: #a0352b;
+}
+
+.result-badge {
+  display: grid;
+  width: 118px;
+  height: 118px;
+  place-items: center;
+  border-radius: 50%;
+  background: #eaf8f0;
+  color: #2f9d6a;
+  font-size: 54px;
+  font-weight: 900;
+}
+
+.star-row {
+  display: flex;
+  gap: 12px;
+  margin: 10px 0 4px;
+  font-size: 44px;
+}
+
+.star-row .earned {
+  color: #f5b927;
+}
+
+.star-row .empty {
+  color: #d7dbe8;
+}
+
+.result-stats {
+  width: 100%;
+  border-radius: 16px;
+  background: #f2f4fb;
+  color: #5e667d;
+  padding: 14px;
+  font-size: 13px;
+}
+
+.result-actions {
+  display: grid;
+  gap: 10px;
+}
+
+.floating-error {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: 16px;
+  z-index: 20;
 }
 
 @media (prefers-reduced-motion: reduce) {
