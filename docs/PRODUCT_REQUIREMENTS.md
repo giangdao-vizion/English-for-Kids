@@ -187,23 +187,28 @@ Từ không thuộc các nhóm trên được đưa vào chủ đề `Từ vựn
 
 ### Dạng bài
 
-MVP có tám dạng bài. Bốn dạng dùng chung:
+MVP có 13 dạng bài hoặc trạng thái bài tập. Nhóm ưu tiên nghe và phản xạ:
 
-1. Xem và nghe flashcard, không chấm điểm.
-2. Nghe tiếng Anh và chọn hình.
-3. Ghép âm thanh hoặc từ với hình.
-4. Thử thách tổng hợp, trộn các dạng đã học và bao phủ toàn bộ từ.
+1. Hiển thị hình, đọc từ và chờ bé đọc theo; không chấm phát âm.
+2. Hiển thị hình và hỏi `What is this?`; chờ bé nói rồi phát đáp án để đối chiếu, không tự chấm.
+3. Đọc từ tiếng Anh để bé chọn hình tương ứng.
+4. Đọc từ, hiển thị hình và cho bé chọn từ viết đúng để nhận diện mặt chữ.
+5. Câu hỏi tình huống theo chủ đề, ưu tiên hành động và cảm xúc.
+6. Đọc câu hỏi Yes/No và cho bé chọn câu trả lời; ví dụ đúng ngữ pháp: `Is she crying?`.
+7. Ghép âm thanh hoặc từ với hình.
+8. Kể một câu chuyện ngắn bằng hai đến ba hình liên tiếp kèm lời đọc, sau đó hỏi bé nội dung hoặc từ đã nghe.
+9. Thử thách tổng hợp, trộn các dạng đã học và bao phủ toàn bộ từ.
 
-Bốn dạng chuyên biệt:
+Nhóm chuyên biệt theo chủ đề:
 
-5. Đếm và chọn số, dành cho chủ đề số đếm.
-6. Nhận diện màu hoặc hình dạng, dành cho chủ đề màu sắc và hình dạng.
-7. Chạm đúng vị trí, dành cho chủ đề bộ phận cơ thể.
-8. Kéo và thả, dùng để đặt vị trí hoặc phân loại con vật, đồ ăn và đồ vật.
+10. Đếm và chọn số, dành cho chủ đề số đếm.
+11. Nhận diện màu hoặc hình dạng, dành cho chủ đề màu sắc và hình dạng.
+12. Chạm đúng vị trí, dành cho chủ đề bộ phận cơ thể.
+13. Kéo và thả, dùng để đặt vị trí hoặc phân loại con vật, đồ ăn và đồ vật.
 
-Chủ đề hành động và cảm xúc dùng dạng nghe và chọn hình với nội dung phù hợp, không tạo thêm cơ chế riêng.
+Hệ thống không bắt bé làm cả 13 dạng trong một lượt. Hệ thống chọn các bài phù hợp với chủ đề, ưu tiên bài nghe, và luân phiên để tránh lặp lại.
 
-Mỗi chủ đề dùng phần học flashcard và ba đến bốn bài có chấm điểm. Màn hình học là một màn hình khung dùng chung, nhưng nội dung, hướng dẫn, vùng tương tác và cách chấm phải thay đổi theo từng dạng bài.
+Mỗi chủ đề dùng phần nghe và đọc theo, sau đó ba đến bốn bài có chấm điểm. Các hoạt động nói chưa có nhận diện giọng nói không được dùng để tính điểm. Màn hình học là một màn hình khung dùng chung, nhưng nội dung, hướng dẫn, vùng tương tác và cách chấm phải thay đổi theo từng dạng bài.
 
 ### Khả năng mở rộng bài tập
 
@@ -212,6 +217,8 @@ Mỗi chủ đề dùng phần học flashcard và ba đến bốn bài có ch�
 - Màn hình xác nhận chủ đề vẫn cho phép bật/tắt bài chỉ riêng cho chủ đề đó.
 - MVP không cho phụ huynh tự tạo một cơ chế trò chơi hoàn toàn mới.
 - Các dạng bài mới sẽ được lập trình và bổ sung trong những phiên bản sau, không thuộc phạm vi MVP.
+- Nhận diện và chấm câu trả lời bằng giọng nói được lưu trong danh sách nâng cấp sau MVP.
+- Video ngắn có âm thanh và câu hỏi nghe hiểu được lưu trong danh sách nâng cấp sau MVP; cần nguồn video có quyền sử dụng, lời thoại và câu hỏi đã được kiểm tra.
 
 ### Âm thanh
 
@@ -219,6 +226,8 @@ Mỗi chủ đề dùng phần học flashcard và ba đến bốn bài có ch�
 - Đọc hướng dẫn và nghĩa bằng tiếng Việt.
 - Có nút nghe lại.
 - Không chấm phát âm của bé trong MVP.
+- Ưu tiên nghe tiếng Anh trước; chỉ đọc tiếng Việt khi giới thiệu nghĩa hoặc khi bé cần trợ giúp.
+- Bài nghe phải có khoảng chờ để bé phản xạ trước khi phát đáp án.
 
 ### Ngoài phạm vi MVP
 
@@ -227,6 +236,7 @@ Mỗi chủ đề dùng phần học flashcard và ba đến bốn bài có ch�
 - Đăng nhập và sao lưu đám mây.
 - Đọc PDF hoặc Word.
 - Chấm phát âm hoặc nhận diện giọng nói.
+- Video nghe hiểu; MVP dùng chuỗi hai đến ba hình có lời kể thay thế.
 - Tạo hình bằng AI.
 - Báo cáo và biểu đồ phức tạp.
 - Thông báo nhắc học.
