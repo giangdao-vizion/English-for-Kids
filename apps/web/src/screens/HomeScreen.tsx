@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { ChildProfile, Topic } from '@english-for-kids/shared'
 
 type HomeScreenProps = {
@@ -27,6 +27,11 @@ export function HomeScreen({
   onOpenParent,
 }: HomeScreenProps) {
   const holdTimer = useRef<number | null>(null)
+  const holdStartedAt = useRef<number | null>(null)
+  const openedRef = useRef(false)
+  const activePointerId = useRef<number | null>(null)
+  const [holding, setHolding] = useState(false)
+  const [holdProgress, setHoldProgress] = useState(0)
   const progressLabel = topicCompleted
     ? 'Đã hoàn thành'
     : `Đang học ${Math.min(learnedCount, totalCount)}/${totalCount}`
@@ -39,19 +44,88 @@ export function HomeScreen({
     }
   }, [])
 
-  function clearHold() {
+  useEffect(() => {
+    if (!holding || holdStartedAt.current === null) {
+      return
+    }
+
+    let frame = 0
+    const tick = () => {
+      if (holdStartedAt.current === null) {
+        return
+      }
+      const elapsed = performance.now() - holdStartedAt.current
+      setHoldProgress(Math.min(1, elapsed / HOLD_MS))
+      frame = window.requestAnimationFrame(tick)
+    }
+    frame = window.requestAnimationFrame(tick)
+    return () => window.cancelAnimationFrame(frame)
+  }, [holding])
+
+  function clearHold(resetVisual = true) {
     if (holdTimer.current) {
       window.clearTimeout(holdTimer.current)
       holdTimer.current = null
     }
+    holdStartedAt.current = null
+    activePointerId.current = null
+    if (resetVisual) {
+      setHolding(false)
+      setHoldProgress(0)
+    }
   }
 
-  function startHold() {
-    clearHold()
+  function finishHold() {
+    if (openedRef.current) {
+      return
+    }
+    openedRef.current = true
+    clearHold(true)
+    onOpenParent()
+    window.setTimeout(() => {
+      openedRef.current = false
+    }, 500)
+  }
+
+  function startHold(event: React.PointerEvent<HTMLButtonElement>) {
+    if (event.pointerType === 'mouse' && event.button !== 0) {
+      return
+    }
+
+    event.preventDefault()
+    try {
+      event.currentTarget.setPointerCapture(event.pointerId)
+    } catch {
+      // Một số trình duyệt / sự kiện không hỗ trợ capture; vẫn giữ timer.
+    }
+    activePointerId.current = event.pointerId
+    openedRef.current = false
+    clearHold(false)
+    holdStartedAt.current = performance.now()
+    setHolding(true)
+    setHoldProgress(0)
     holdTimer.current = window.setTimeout(() => {
       holdTimer.current = null
-      onOpenParent()
+      finishHold()
     }, HOLD_MS)
+  }
+
+  function endHold(event: React.PointerEvent<HTMLButtonElement>) {
+    if (
+      activePointerId.current !== null &&
+      event.pointerId !== activePointerId.current
+    ) {
+      return
+    }
+
+    try {
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId)
+      }
+    } catch {
+      // ignore
+    }
+    clearHold(true)
   }
 
   return (
@@ -104,16 +178,24 @@ export function HomeScreen({
         </button>
         <button
           aria-label="Giữ 3 giây để mở khu vực phụ huynh"
-          className="parent-button"
+          className={`parent-hold-button ${holding ? 'holding' : ''}`}
           title="Giữ 3 giây để mở khu vực phụ huynh"
           type="button"
           onPointerDown={startHold}
-          onPointerUp={clearHold}
-          onPointerLeave={clearHold}
-          onPointerCancel={clearHold}
+          onPointerUp={endHold}
+          onPointerCancel={endHold}
+          onLostPointerCapture={() => clearHold(true)}
           onContextMenu={(event) => event.preventDefault()}
+          onClick={(event) => event.preventDefault()}
         >
-          Phụ huynh
+          <span
+            className="parent-hold-fill"
+            style={{ transform: `scaleX(${holdProgress})` }}
+            aria-hidden="true"
+          />
+          <span className="parent-hold-label">
+            {holding ? 'Giữ thêm…' : 'Phụ huynh'}
+          </span>
         </button>
       </footer>
     </main>
