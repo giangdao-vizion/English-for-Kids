@@ -179,7 +179,7 @@ Chi tiết được lưu tại `docs/IMPLEMENTATION_PLAN.md`.
 
 ### Giai đoạn 12 — Xây dựng MVP
 
-Trạng thái: `Đang thực hiện — Giai đoạn 3: luồng Animals hoàn chỉnh`
+Trạng thái: `Đang thực hiện — Giai đoạn 4: khu vực phụ huynh + thêm flashcard`
 
 Thứ tự dự kiến:
 
@@ -203,6 +203,7 @@ Kết quả Giai đoạn 1:
 - Đã triển khai bản thử tại `https://english-for-kids-20261108.web.app`.
 - Đã thêm icon PNG để cài lên màn hình chính iPhone.
 - Đã dựng luồng Animals mẫu: làm quen flashcard, nghe và chọn, chấm sao, lưu tiến độ và tiếp tục bài đang dở.
+- Đã mở khu vực phụ huynh (giữ 3 giây), thêm/xác nhận flashcard JPG/PNG (giả lập AI), lưu IndexedDB và giao bài cho bé học.
 
 ### Giai đoạn 13 — Kiểm thử
 

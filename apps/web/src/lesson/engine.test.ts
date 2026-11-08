@@ -23,6 +23,15 @@ describe('lesson engine', () => {
     )
   })
 
+  it('uses a final mixed listening checkpoint for larger topics', async () => {
+    const { finalCheckpointFor, learningCheckpointCount } = await import(
+      './engine'
+    )
+    expect(learningCheckpointCount(10)).toBe(2)
+    expect(finalCheckpointFor(10)).toBe(3)
+    expect(finalCheckpointFor(4)).toBe(1)
+  })
+
   it('moves from flashcards into listening practice', () => {
     const progress = createInitialProgress('topic-animals-demo')
     const next = advanceAfterFlashcards(progress, 5)

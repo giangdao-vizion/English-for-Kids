@@ -1,12 +1,6 @@
-export type SampleCard = {
-  id: string
-  word: string
-  meaningVietnamese: string
-  emoji: string
-  color: string
-  exampleEnglish: string
-  exampleVietnamese: string
-}
+import type { LessonCard } from '../lesson/types'
+
+export type SampleCard = LessonCard
 
 export const ANIMALS_TOPIC_ID = 'topic-animals-demo'
 export const ANIMALS_TOPIC_NAME = 'Animals'
@@ -17,6 +11,7 @@ export const animalCards: SampleCard[] = [
     id: 'card-cat',
     word: 'cat',
     meaningVietnamese: 'con mèo',
+    imageUrl: null,
     emoji: '🐱',
     color: '#7bc8c8',
     exampleEnglish: 'This is a cat.',
@@ -26,6 +21,7 @@ export const animalCards: SampleCard[] = [
     id: 'card-dog',
     word: 'dog',
     meaningVietnamese: 'con chó',
+    imageUrl: null,
     emoji: '🐶',
     color: '#f0a35e',
     exampleEnglish: 'This is a dog.',
@@ -35,6 +31,7 @@ export const animalCards: SampleCard[] = [
     id: 'card-bird',
     word: 'bird',
     meaningVietnamese: 'con chim',
+    imageUrl: null,
     emoji: '🐦',
     color: '#7dba7a',
     exampleEnglish: 'This is a bird.',
@@ -44,6 +41,7 @@ export const animalCards: SampleCard[] = [
     id: 'card-fish',
     word: 'fish',
     meaningVietnamese: 'con cá',
+    imageUrl: null,
     emoji: '🐟',
     color: '#6aa8e8',
     exampleEnglish: 'This is a fish.',
@@ -53,6 +51,7 @@ export const animalCards: SampleCard[] = [
     id: 'card-rabbit',
     word: 'rabbit',
     meaningVietnamese: 'con thỏ',
+    imageUrl: null,
     emoji: '🐰',
     color: '#d7a4c7',
     exampleEnglish: 'This is a rabbit.',
@@ -62,6 +61,7 @@ export const animalCards: SampleCard[] = [
     id: 'card-duck',
     word: 'duck',
     meaningVietnamese: 'con vịt',
+    imageUrl: null,
     emoji: '🦆',
     color: '#e8c35a',
     exampleEnglish: 'This is a duck.',
@@ -71,6 +71,7 @@ export const animalCards: SampleCard[] = [
     id: 'card-cow',
     word: 'cow',
     meaningVietnamese: 'con bò',
+    imageUrl: null,
     emoji: '🐄',
     color: '#9bb0c9',
     exampleEnglish: 'This is a cow.',
@@ -80,6 +81,7 @@ export const animalCards: SampleCard[] = [
     id: 'card-horse',
     word: 'horse',
     meaningVietnamese: 'con ngựa',
+    imageUrl: null,
     emoji: '🐴',
     color: '#c49a6c',
     exampleEnglish: 'This is a horse.',
@@ -89,6 +91,7 @@ export const animalCards: SampleCard[] = [
     id: 'card-lion',
     word: 'lion',
     meaningVietnamese: 'sư tử',
+    imageUrl: null,
     emoji: '🦁',
     color: '#e0a045',
     exampleEnglish: 'This is a lion.',
@@ -98,6 +101,7 @@ export const animalCards: SampleCard[] = [
     id: 'card-elephant',
     word: 'elephant',
     meaningVietnamese: 'con voi',
+    imageUrl: null,
     emoji: '🐘',
     color: '#8d9bb8',
     exampleEnglish: 'This is an elephant.',

@@ -1,14 +1,15 @@
 import { useEffect, useMemo, useState } from 'react'
-import type { SampleCard } from '../sample/animals'
 import {
   buildChoiceQuestion,
   cardsForCheckpoint,
   type LessonProgress,
 } from '../lesson/engine'
+import type { LessonCard } from '../lesson/types'
 import { speakEnglish, speakVietnamese, stopSpeaking } from '../speech'
 
 type LessonScreenProps = {
-  cards: SampleCard[]
+  topicName: string
+  cards: LessonCard[]
   progress: LessonProgress
   onFlashcardNext: () => void
   onAnswer: (payload: {
@@ -21,6 +22,7 @@ type LessonScreenProps = {
 }
 
 export function LessonScreen({
+  topicName,
   cards,
   progress,
   onFlashcardNext,
@@ -36,6 +38,7 @@ export function LessonScreen({
     const card = checkpointCards[progress.cardIndex]
     return (
       <FlashcardStep
+        topicName={topicName}
         card={card}
         checkpoint={progress.checkpoint}
         index={progress.cardIndex}
@@ -50,6 +53,7 @@ export function LessonScreen({
   return (
     <ListenChooseStep
       key={target.id}
+      topicName={topicName}
       allCards={cards}
       target={target}
       checkpoint={progress.checkpoint}
@@ -62,6 +66,7 @@ export function LessonScreen({
 }
 
 function FlashcardStep({
+  topicName,
   card,
   checkpoint,
   index,
@@ -69,7 +74,8 @@ function FlashcardStep({
   onNext,
   onExit,
 }: {
-  card: SampleCard
+  topicName: string
+  card: LessonCard
   checkpoint: number
   index: number
   total: number
@@ -84,7 +90,7 @@ function FlashcardStep({
   return (
     <main className="app-shell lesson-screen">
       <LessonHeader
-        title="Animals"
+        title={topicName}
         subtitle={`Chặng ${checkpoint} · Làm quen từ`}
         progressValue={((index + 1) / total) * 100}
         progressLabel={`${index + 1}/${total}`}
@@ -92,13 +98,7 @@ function FlashcardStep({
       />
 
       <section className="flashcard-panel">
-        <div
-          className="animal-hero"
-          style={{ background: card.color }}
-          aria-hidden="true"
-        >
-          <span>{card.emoji}</span>
-        </div>
+        <CardVisual card={card} size="hero" />
         <h1>{card.word}</h1>
         <p>{card.meaningVietnamese}</p>
         <div className="speech-actions">
@@ -128,6 +128,7 @@ function FlashcardStep({
 }
 
 function ListenChooseStep({
+  topicName,
   allCards,
   target,
   checkpoint,
@@ -136,8 +137,9 @@ function ListenChooseStep({
   onAnswer,
   onExit,
 }: {
-  allCards: SampleCard[]
-  target: SampleCard
+  topicName: string
+  allCards: LessonCard[]
+  target: LessonCard
   checkpoint: number
   index: number
   total: number
@@ -210,7 +212,7 @@ function ListenChooseStep({
   return (
     <main className="app-shell lesson-screen">
       <LessonHeader
-        title="Animals"
+        title={topicName}
         subtitle={`Chặng ${checkpoint} · Nghe và chọn`}
         progressValue={((index + 1) / total) * 100}
         progressLabel={`${index + 1}/${total}`}
@@ -246,13 +248,7 @@ function ListenChooseStep({
               onClick={() => handleChoose(choice.id)}
               disabled={revealed}
             >
-              <span
-                className="choice-emoji"
-                style={{ background: choice.color }}
-                aria-hidden="true"
-              >
-                {choice.emoji}
-              </span>
+              <CardVisual card={choice} size="choice" />
               <strong>{choice.word}</strong>
             </button>
           )
@@ -270,6 +266,35 @@ function ListenChooseStep({
         </p>
       )}
     </main>
+  )
+}
+
+function CardVisual({
+  card,
+  size,
+}: {
+  card: LessonCard
+  size: 'hero' | 'choice'
+}) {
+  if (card.imageUrl) {
+    return (
+      <div
+        className={size === 'hero' ? 'animal-hero photo' : 'choice-emoji photo'}
+        aria-hidden="true"
+      >
+        <img src={card.imageUrl} alt="" />
+      </div>
+    )
+  }
+
+  return (
+    <div
+      className={size === 'hero' ? 'animal-hero' : 'choice-emoji'}
+      style={{ background: card.color }}
+      aria-hidden="true"
+    >
+      <span>{card.emoji ?? card.word.slice(0, 1).toUpperCase()}</span>
+    </div>
   )
 }
 

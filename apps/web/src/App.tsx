@@ -1,27 +1,38 @@
 import { useEffect, useState } from 'react'
-import type { ChildProfile } from '@english-for-kids/shared'
+import type { ChildProfile, Topic } from '@english-for-kids/shared'
 import './app.css'
 import {
+  confirmFlashcardBatch,
   createProfile,
   loadOrStartLesson,
   loadProfile,
   loadTopicSummary,
   restartLesson,
   saveLessonProgress,
+  setActiveTopicId,
 } from './db'
 import {
   advanceAfterFlashcards,
   advanceAfterQuestion,
   cardsForCheckpoint,
+  finalCheckpointFor,
+  learningCheckpointCount,
   type LessonProgress,
 } from './lesson/engine'
-import { animalCards } from './sample/animals'
+import type { LessonCard } from './lesson/types'
+import { AddFlashcardsScreen } from './screens/AddFlashcardsScreen'
 import { HomeScreen } from './screens/HomeScreen'
 import { LessonScreen } from './screens/LessonScreen'
+import { ParentHomeScreen } from './screens/ParentHomeScreen'
 import { ResultScreen } from './screens/ResultScreen'
 import { prepareVoices, stopSpeaking } from './speech'
 
-type Screen = 'home' | 'lesson' | 'result'
+type Screen =
+  | 'home'
+  | 'lesson'
+  | 'result'
+  | 'parent-home'
+  | 'parent-add'
 
 function App() {
   const [profile, setProfile] = useState<ChildProfile | null>(null)
@@ -31,8 +42,11 @@ function App() {
   const [error, setError] = useState('')
   const [screen, setScreen] = useState<Screen>('home')
   const [progress, setProgress] = useState<LessonProgress | null>(null)
+  const [lessonCards, setLessonCards] = useState<LessonCard[]>([])
+  const [topics, setTopics] = useState<Topic[]>([])
+  const [activeTopic, setActiveTopic] = useState<Topic | undefined>()
   const [learnedCount, setLearnedCount] = useState(0)
-  const [totalCount, setTotalCount] = useState(animalCards.length)
+  const [totalCount, setTotalCount] = useState(0)
   const [topicCompleted, setTopicCompleted] = useState(false)
 
   useEffect(() => {
@@ -41,16 +55,49 @@ function App() {
   }, [])
 
   useEffect(() => {
+    return () => {
+      for (const card of lessonCards) {
+        if (card.imageUrl) {
+          URL.revokeObjectURL(card.imageUrl)
+        }
+      }
+    }
+  }, [lessonCards])
+
+  async function refreshSummary(topicId?: string) {
+    const summary = await loadTopicSummary(topicId)
+    const latestProfile = await loadProfile()
+    setProfile(latestProfile ?? null)
+    setTopics(summary.topics)
+    setActiveTopic(summary.topic)
+    setLearnedCount(summary.learnedCount)
+    setTotalCount(summary.totalCount)
+    setTopicCompleted(summary.topic?.status === 'completed')
+    setProgress(summary.activeLesson ?? null)
+    setLessonCards((previous) => {
+      for (const card of previous) {
+        if (card.imageUrl) {
+          URL.revokeObjectURL(card.imageUrl)
+        }
+      }
+      return summary.cards
+    })
+  }
+
+  useEffect(() => {
     async function bootstrap() {
       try {
         const savedProfile = await loadProfile()
         setProfile(savedProfile ?? null)
         if (savedProfile) {
           const summary = await loadTopicSummary()
+          setTopics(summary.topics)
+          setActiveTopic(summary.topic)
           setLearnedCount(summary.learnedCount)
           setTotalCount(summary.totalCount)
           setTopicCompleted(summary.topic?.status === 'completed')
           setProgress(summary.activeLesson ?? null)
+          setLessonCards(summary.cards)
         }
       } catch {
         setError('Không thể đọc dữ liệu đã lưu trên thiết bị.')
@@ -61,16 +108,6 @@ function App() {
 
     void bootstrap()
   }, [])
-
-  async function refreshSummary() {
-    const summary = await loadTopicSummary()
-    const latestProfile = await loadProfile()
-    setProfile(latestProfile ?? null)
-    setLearnedCount(summary.learnedCount)
-    setTotalCount(summary.totalCount)
-    setTopicCompleted(summary.topic?.status === 'completed')
-    setProgress(summary.activeLesson ?? null)
-  }
 
   async function handleSetup(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -85,9 +122,19 @@ function App() {
       const savedProfile = await createProfile(displayName, avatar)
       setProfile(savedProfile)
       await refreshSummary()
-      const lesson = await loadOrStartLesson()
-      setProgress(lesson)
-      setScreen(lesson.phase === 'result' ? 'result' : 'lesson')
+      const started = await loadOrStartLesson()
+      setProgress(started.progress)
+      setLessonCards((previous) => {
+        for (const card of previous) {
+          if (card.imageUrl) {
+            URL.revokeObjectURL(card.imageUrl)
+          }
+        }
+        return started.cards
+      })
+      setScreen(
+        started.progress.phase === 'result' ? 'result' : 'lesson',
+      )
     } catch {
       setError('Không thể lưu hồ sơ. Ba mẹ hãy thử lại.')
     }
@@ -96,22 +143,42 @@ function App() {
   async function handleContinueLesson() {
     setError('')
     try {
-      const lesson = await loadOrStartLesson()
-      setProgress(lesson)
-      setScreen(lesson.phase === 'result' ? 'result' : 'lesson')
-    } catch {
-      setError('Không thể mở bài học.')
+      const started = await loadOrStartLesson(activeTopic?.id)
+      setProgress(started.progress)
+      setLessonCards((previous) => {
+        for (const card of previous) {
+          if (card.imageUrl) {
+            URL.revokeObjectURL(card.imageUrl)
+          }
+        }
+        return started.cards
+      })
+      setScreen(
+        started.progress.phase === 'result' ? 'result' : 'lesson',
+      )
+    } catch (caught) {
+      setError(
+        caught instanceof Error ? caught.message : 'Không thể mở bài học.',
+      )
     }
   }
 
   async function handleRestartLesson() {
     setError('')
     try {
-      const lesson = await restartLesson()
-      setProgress(lesson)
+      const started = await restartLesson(activeTopic?.id)
+      setProgress(started.progress)
+      setLessonCards((previous) => {
+        for (const card of previous) {
+          if (card.imageUrl) {
+            URL.revokeObjectURL(card.imageUrl)
+          }
+        }
+        return started.cards
+      })
       setTopicCompleted(false)
       setScreen('lesson')
-      await refreshSummary()
+      await refreshSummary(activeTopic?.id)
     } catch {
       setError('Không thể bắt đầu lại bài học.')
     }
@@ -120,7 +187,7 @@ function App() {
   async function persist(next: LessonProgress) {
     const saved = await saveLessonProgress(next)
     setProgress(saved)
-    await refreshSummary()
+    await refreshSummary(saved.topicId)
     if (saved.phase === 'result' || saved.completed) {
       setScreen('result')
     }
@@ -128,7 +195,10 @@ function App() {
 
   async function handleFlashcardNext() {
     if (!progress) return
-    const checkpointCards = cardsForCheckpoint(animalCards, progress.checkpoint)
+    const checkpointCards = cardsForCheckpoint(
+      lessonCards,
+      progress.checkpoint,
+    )
     const next = advanceAfterFlashcards(progress, checkpointCards.length)
     await persist(next)
   }
@@ -140,11 +210,16 @@ function App() {
     cardId: string
   }) {
     if (!progress) return
-    const checkpointCards = cardsForCheckpoint(animalCards, progress.checkpoint)
+    const checkpointCards = cardsForCheckpoint(
+      lessonCards,
+      progress.checkpoint,
+    )
     const next = advanceAfterQuestion(
       progress,
       checkpointCards.length,
       payload,
+      finalCheckpointFor(lessonCards.length),
+      learningCheckpointCount(lessonCards.length),
     )
     await persist(next)
   }
@@ -223,10 +298,42 @@ function App() {
     )
   }
 
+  if (screen === 'parent-add') {
+    return (
+      <AddFlashcardsScreen
+        onBack={() => setScreen('parent-home')}
+        onConfirm={async (payload) => {
+          const topic = await confirmFlashcardBatch(payload)
+          await refreshSummary(topic.id)
+          setScreen('home')
+        }}
+      />
+    )
+  }
+
+  if (screen === 'parent-home') {
+    return (
+      <ParentHomeScreen
+        topics={topics}
+        activeTopicId={activeTopic?.id ?? ''}
+        onBack={() => setScreen('home')}
+        onAddFlashcards={() => setScreen('parent-add')}
+        onSelectTopic={(topicId) => {
+          void (async () => {
+            await setActiveTopicId(topicId)
+            await refreshSummary(topicId)
+            setScreen('home')
+          })()
+        }}
+      />
+    )
+  }
+
   if (screen === 'lesson' && progress && progress.phase !== 'result') {
     return (
       <LessonScreen
-        cards={animalCards}
+        topicName={activeTopic?.nameEnglish ?? 'Lesson'}
+        cards={lessonCards}
         progress={progress}
         onFlashcardNext={() => {
           void handleFlashcardNext()
@@ -237,7 +344,7 @@ function App() {
         onExit={() => {
           stopSpeaking()
           setScreen('home')
-          void refreshSummary()
+          void refreshSummary(progress.topicId)
         }}
       />
     )
@@ -246,10 +353,12 @@ function App() {
   if (screen === 'result' && progress) {
     return (
       <ResultScreen
+        topicName={activeTopic?.nameEnglish ?? 'Lesson'}
+        cardCount={lessonCards.length || totalCount}
         progress={progress}
         onHome={() => {
           setScreen('home')
-          void refreshSummary()
+          void refreshSummary(progress.topicId)
         }}
         onContinue={() => {
           void handleRestartLesson()
@@ -262,6 +371,7 @@ function App() {
     <>
       <HomeScreen
         profile={profile}
+        topic={activeTopic}
         learnedCount={learnedCount}
         totalCount={totalCount}
         hasActiveLesson={Boolean(progress && !progress.completed)}
@@ -272,6 +382,7 @@ function App() {
         onRestart={() => {
           void handleRestartLesson()
         }}
+        onOpenParent={() => setScreen('parent-home')}
       />
       {error && (
         <p className="error-message floating-error" role="alert">

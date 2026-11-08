@@ -1,7 +1,7 @@
-import type { SampleCard } from '../sample/animals'
+import type { LessonCard } from './types'
 
 export type LessonPhase = 'flashcard' | 'listen-choose' | 'result'
-export type Checkpoint = 1 | 2 | 3
+export type Checkpoint = number
 
 export type LessonProgress = {
   topicId: string
@@ -19,8 +19,8 @@ export type LessonProgress = {
 }
 
 export type ChoiceQuestion = {
-  card: SampleCard
-  choices: SampleCard[]
+  card: LessonCard
+  choices: LessonCard[]
 }
 
 export const WORDS_PER_CHECKPOINT = 5
@@ -42,20 +42,33 @@ export function createInitialProgress(topicId: string): LessonProgress {
   }
 }
 
+export function learningCheckpointCount(cardCount: number): number {
+  return Math.max(1, Math.ceil(cardCount / WORDS_PER_CHECKPOINT))
+}
+
+export function finalCheckpointFor(cardCount: number): number {
+  const learning = learningCheckpointCount(cardCount)
+  return learning > 1 ? learning + 1 : learning
+}
+
 export function cardsForCheckpoint(
-  cards: SampleCard[],
+  cards: LessonCard[],
   checkpoint: Checkpoint,
-): SampleCard[] {
-  if (checkpoint === 3) {
+): LessonCard[] {
+  const learning = learningCheckpointCount(cards.length)
+  const finalCheckpoint = finalCheckpointFor(cards.length)
+
+  if (checkpoint >= finalCheckpoint && finalCheckpoint > learning) {
     return cards
   }
+
   const start = (checkpoint - 1) * WORDS_PER_CHECKPOINT
   return cards.slice(start, start + WORDS_PER_CHECKPOINT)
 }
 
 export function buildChoiceQuestion(
-  cards: SampleCard[],
-  target: SampleCard,
+  cards: LessonCard[],
+  target: LessonCard,
   choiceCount = 4,
 ): ChoiceQuestion {
   const distractors = shuffle(
@@ -119,6 +132,8 @@ export function advanceAfterQuestion(
     revealed: boolean
     cardId: string
   },
+  finalCheckpoint = 3,
+  learningCheckpoints = finalCheckpoint > 1 ? finalCheckpoint - 1 : 1,
 ): LessonProgress {
   const next: LessonProgress = {
     ...progress,
@@ -140,11 +155,14 @@ export function advanceAfterQuestion(
     }
   }
 
-  if (progress.checkpoint < 3) {
+  if (progress.checkpoint < finalCheckpoint) {
+    const nextCheckpoint = progress.checkpoint + 1
+    const reviewOnly =
+      nextCheckpoint === finalCheckpoint && finalCheckpoint > learningCheckpoints
     return {
       ...next,
-      checkpoint: (progress.checkpoint + 1) as Checkpoint,
-      phase: 'flashcard',
+      checkpoint: nextCheckpoint,
+      phase: reviewOnly ? 'listen-choose' : 'flashcard',
       cardIndex: 0,
       questionIndex: 0,
     }

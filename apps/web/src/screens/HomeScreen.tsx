@@ -1,31 +1,58 @@
-import type { ChildProfile } from '@english-for-kids/shared'
-import {
-  ANIMALS_TOPIC_NAME,
-  ANIMALS_TOPIC_NAME_VI,
-} from '../sample/animals'
+import { useEffect, useRef } from 'react'
+import type { ChildProfile, Topic } from '@english-for-kids/shared'
 
 type HomeScreenProps = {
   profile: ChildProfile
+  topic: Topic | undefined
   learnedCount: number
   totalCount: number
   hasActiveLesson: boolean
   topicCompleted: boolean
   onContinue: () => void
   onRestart: () => void
+  onOpenParent: () => void
 }
+
+const HOLD_MS = 3000
 
 export function HomeScreen({
   profile,
+  topic,
   learnedCount,
   totalCount,
   hasActiveLesson,
   topicCompleted,
   onContinue,
   onRestart,
+  onOpenParent,
 }: HomeScreenProps) {
+  const holdTimer = useRef<number | null>(null)
   const progressLabel = topicCompleted
     ? 'Đã hoàn thành'
     : `Đang học ${Math.min(learnedCount, totalCount)}/${totalCount}`
+
+  useEffect(() => {
+    return () => {
+      if (holdTimer.current) {
+        window.clearTimeout(holdTimer.current)
+      }
+    }
+  }, [])
+
+  function clearHold() {
+    if (holdTimer.current) {
+      window.clearTimeout(holdTimer.current)
+      holdTimer.current = null
+    }
+  }
+
+  function startHold() {
+    clearHold()
+    holdTimer.current = window.setTimeout(() => {
+      holdTimer.current = null
+      onOpenParent()
+    }, HOLD_MS)
+  }
 
   return (
     <main className="app-shell home-screen">
@@ -48,13 +75,13 @@ export function HomeScreen({
 
       <section className="empty-lesson">
         <div className="topic-art animals-art" aria-hidden="true">
-          <span>🐱</span>
-          <span>🐶</span>
-          <span>🐦</span>
+          <span>Aa</span>
+          <span>Bb</span>
+          <span>Cc</span>
         </div>
-        <h1>{ANIMALS_TOPIC_NAME}</h1>
+        <h1>{topic?.nameEnglish ?? 'Animals'}</h1>
         <p>
-          {ANIMALS_TOPIC_NAME_VI} · {progressLabel}
+          {topic?.nameVietnamese ?? 'Động vật'} · {progressLabel}
         </p>
         <button className="primary-button" type="button" onClick={onContinue}>
           {hasActiveLesson && !topicCompleted ? 'Học tiếp' : 'Bắt đầu học'}
@@ -76,10 +103,15 @@ export function HomeScreen({
           <span aria-hidden="true">□</span>
         </button>
         <button
-          aria-label="Mở khu vực phụ huynh"
+          aria-label="Giữ 3 giây để mở khu vực phụ huynh"
           className="parent-button"
           title="Giữ 3 giây để mở khu vực phụ huynh"
           type="button"
+          onPointerDown={startHold}
+          onPointerUp={clearHold}
+          onPointerLeave={clearHold}
+          onPointerCancel={clearHold}
+          onContextMenu={(event) => event.preventDefault()}
         >
           Phụ huynh
         </button>

@@ -1,12 +1,16 @@
 import type { LessonProgress } from '../lesson/engine'
 
 type ResultScreenProps = {
+  topicName: string
+  cardCount: number
   progress: LessonProgress
   onHome: () => void
   onContinue: () => void
 }
 
 export function ResultScreen({
+  topicName,
+  cardCount,
   progress,
   onHome,
   onContinue,
@@ -26,7 +30,7 @@ export function ResultScreen({
         </button>
         <div>
           <strong>Hoàn thành</strong>
-          <span>Animals</span>
+          <span>{topicName}</span>
         </div>
         <span />
       </header>
@@ -36,7 +40,9 @@ export function ResultScreen({
           ✓
         </div>
         <h1>Con làm tốt lắm!</h1>
-        <p>Hoàn thành 10 từ chủ đề Animals</p>
+        <p>
+          Hoàn thành {cardCount} từ chủ đề {topicName}
+        </p>
 
         <div className="star-row" aria-label={`${progress.awardedStars} sao`}>
           {[1, 2, 3].map((star) => (
