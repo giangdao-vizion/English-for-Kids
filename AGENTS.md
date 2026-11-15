@@ -19,6 +19,13 @@ Hướng dẫn cho agent khi làm việc trên project **English-for-Kids**.
 - Không tự ý thay đổi các mục đã xác nhận; ghi lại quyết định mới sau khi có xác nhận của phụ huynh.
 - Tuyệt đối không lưu API key hoặc thông tin bí mật vào mã nguồn, tài liệu, log hay lịch sử Git.
 
+## Âm thanh bài học
+
+- Khi trả lời đúng: chỉ phát `Great job!` — **không** đọc lại từ đúng / Yes-No sau đó.
+- Khi sai lần 1: phát `Try again.`
+- Khi hiện đáp án: có thể nói `The answer is …` và đọc từ/đáp án.
+- Không nối âm câu sau vào feedback câu hiện tại; cắt sạch TTS khi sang câu mới.
+
 ## Quy ước cập nhật file này
 
 - Khi phát hiện hoặc thống nhất nguyên tắc mới trong lúc làm việc → bổ sung vào `AGENTS.md` trong cùng phiên làm việc.

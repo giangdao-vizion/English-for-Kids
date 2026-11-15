@@ -436,7 +436,6 @@ function ListenChooseStep({
     if (correct) {
       const parts: SpeakPart[] = [
         { text: FEEDBACK_VOICE.correct, lang: 'en' },
-        { text: target.word, lang: 'en' },
       ]
       setFeedback(FEEDBACK_VOICE.correct)
       setLocked(true)
@@ -591,7 +590,6 @@ function ChooseWordStep({
     if (correct) {
       const parts: SpeakPart[] = [
         { text: FEEDBACK_VOICE.correct, lang: 'en' },
-        { text: target.word, lang: 'en' },
       ]
       setFeedback(FEEDBACK_VOICE.correct)
       setLocked(true)
@@ -736,10 +734,7 @@ function YesNoStep({
       (value === 'no' && !question.answerIsYes)
     const answerLabel = question.answerIsYes ? 'Yes' : 'No'
     const parts: SpeakPart[] = correct
-      ? [
-          { text: FEEDBACK_VOICE.correct, lang: 'en' },
-          { text: answerLabel, lang: 'en' },
-        ]
+      ? [{ text: FEEDBACK_VOICE.correct, lang: 'en' }]
       : [
           { text: FEEDBACK_VOICE.wrongYesNo(answerLabel), lang: 'en' },
           { text: answerLabel, lang: 'en' },
