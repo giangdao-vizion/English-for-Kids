@@ -1,4 +1,11 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MutableRefObject,
+  type ReactNode,
+} from 'react'
 import { hasSeenLessonIntro, markLessonIntroSeen } from '../db'
 import {
   buildChoiceQuestion,
@@ -11,10 +18,12 @@ import {
 import { FEEDBACK_VOICE, LESSON_INTROS } from '../lesson/intros'
 import type { LessonCard } from '../lesson/types'
 import {
+  estimateSpeechMs,
   getSpeechSupportMessage,
   speakEnglish,
   speakNow,
   speakVietnamese,
+  stopSpeaking,
   type SpeakPart,
 } from '../speech'
 
@@ -51,6 +60,8 @@ export function LessonScreen({
     Record<string, boolean>
   >({})
   const [openedGates, setOpenedGates] = useState<Record<string, true>>({})
+  // Nội dung đã đọc ngay sau màn chạm-để-nghe — tránh đọc trùng khi bước mount.
+  const gateSpokenKeysRef = useRef(new Set<string>())
 
   useEffect(() => {
     let cancelled = false
@@ -73,8 +84,45 @@ export function LessonScreen({
     }
   }, [progress.phase])
 
+  useEffect(() => {
+    return () => stopSpeaking()
+  }, [progress.phase, progress.checkpoint])
+
   const gateOpen =
     progress.phase !== 'result' && introReady && !openedGates[gateKey]
+
+  function contentKeyForProgress(): string | null {
+    if (progress.phase === 'flashcard') {
+      const card = checkpointCards[progress.cardIndex]
+      return card
+        ? `flash:${progress.checkpoint}:${progress.cardIndex}:${card.id}`
+        : null
+    }
+    const target = checkpointCards[progress.questionIndex]
+    if (!target) return null
+    return `${progress.phase}:${progress.checkpoint}:${progress.questionIndex}:${target.id}`
+  }
+
+  function startPhase() {
+    if (progress.phase === 'result') return
+    const intro = LESSON_INTROS[progress.phase]
+    const firstTime = firstTimeByPhase[progress.phase] !== false
+    const guide = firstTime ? intro.speakText : intro.shortSpeak
+    const contentKey = contentKeyForProgress()
+    if (contentKey) {
+      gateSpokenKeysRef.current.add(contentKey)
+    }
+    // Hướng dẫn VI + nội dung câu/từ đầu tiên trong cùng thao tác chạm.
+    speakNow([{ text: guide, lang: 'vi' }, ...firstContentParts()])
+    if (firstTime) {
+      void markLessonIntroSeen(progress.phase)
+      setFirstTimeByPhase((previous) => ({
+        ...previous,
+        [progress.phase]: false,
+      }))
+    }
+    setOpenedGates((previous) => ({ ...previous, [gateKey]: true }))
+  }
 
   function firstContentParts(): SpeakPart[] {
     if (progress.phase === 'flashcard') {
@@ -88,23 +136,6 @@ export function LessonScreen({
       return [{ text: buildYesNoQuestion(target).prompt, lang: 'en' }]
     }
     return [{ text: target.word, lang: 'en' }]
-  }
-
-  function startPhase() {
-    if (progress.phase === 'result') return
-    const intro = LESSON_INTROS[progress.phase]
-    const firstTime = firstTimeByPhase[progress.phase] !== false
-    const guide = firstTime ? intro.speakText : intro.shortSpeak
-    // Bắt buộc đọc trong cùng thao tác chạm — iPhone mới phát được.
-    speakNow([{ text: guide, lang: 'vi' }, ...firstContentParts()])
-    if (firstTime) {
-      void markLessonIntroSeen(progress.phase)
-      setFirstTimeByPhase((previous) => ({
-        ...previous,
-        [progress.phase]: false,
-      }))
-    }
-    setOpenedGates((previous) => ({ ...previous, [gateKey]: true }))
   }
 
   if (!introReady) {
@@ -130,7 +161,11 @@ export function LessonScreen({
         />
         <section className="lesson-intro-panel">
           <h1>{intro.title}</h1>
-          <p>{firstTime ? intro.body : 'Chạm nút bên dưới để nghe và bắt đầu chặng này.'}</p>
+          <p>
+            {firstTime
+              ? intro.body
+              : 'Chạm nút bên dưới để nghe hướng dẫn và bắt đầu chặng này.'}
+          </p>
           {speechHint && <p className="speech-hint">{speechHint}</p>}
           <button className="primary-button" type="button" onClick={startPhase}>
             {firstTime ? 'Nghe hướng dẫn và bắt đầu' : 'Chạm để nghe và bắt đầu'}
@@ -142,16 +177,18 @@ export function LessonScreen({
 
   if (progress.phase === 'flashcard') {
     const card = checkpointCards[progress.cardIndex]
-    const nextCard = checkpointCards[progress.cardIndex + 1]
+    const contentKey = `flash:${progress.checkpoint}:${progress.cardIndex}:${card.id}`
     return (
       <FlashcardStep
+        key={contentKey}
         topicName={topicName}
         card={card}
-        nextCard={nextCard}
         checkpoint={progress.checkpoint}
         index={progress.cardIndex}
         total={checkpointCards.length}
         speechHint={speechHint}
+        contentKey={contentKey}
+        gateSpokenKeysRef={gateSpokenKeysRef}
         onNext={onFlashcardNext}
         onExit={onExit}
       />
@@ -159,20 +196,21 @@ export function LessonScreen({
   }
 
   const target = checkpointCards[progress.questionIndex]
-  const nextTarget = checkpointCards[progress.questionIndex + 1]
+  const gradedKey = `${progress.phase}:${progress.checkpoint}:${progress.questionIndex}:${target.id}`
 
   if (progress.phase === 'choose-word') {
     return (
       <ChooseWordStep
-        key={`word-${target.id}`}
+        key={gradedKey}
         topicName={topicName}
         allCards={cards}
         target={target}
-        nextTarget={nextTarget}
         checkpoint={progress.checkpoint}
         index={progress.questionIndex}
         total={checkpointCards.length}
         speechHint={speechHint}
+        contentKey={gradedKey}
+        gateSpokenKeysRef={gateSpokenKeysRef}
         onAnswer={onAnswer}
         onExit={onExit}
       />
@@ -182,14 +220,15 @@ export function LessonScreen({
   if (progress.phase === 'yes-no') {
     return (
       <YesNoStep
-        key={`yesno-${target.id}`}
+        key={gradedKey}
         topicName={topicName}
         target={target}
-        nextTarget={nextTarget}
         checkpoint={progress.checkpoint}
         index={progress.questionIndex}
         total={checkpointCards.length}
         speechHint={speechHint}
+        contentKey={gradedKey}
+        gateSpokenKeysRef={gateSpokenKeysRef}
         onAnswer={onAnswer}
         onExit={onExit}
       />
@@ -198,15 +237,16 @@ export function LessonScreen({
 
   return (
     <ListenChooseStep
-      key={`listen-${target.id}`}
+      key={gradedKey}
       topicName={topicName}
       allCards={cards}
       target={target}
-      nextTarget={nextTarget}
       checkpoint={progress.checkpoint}
       index={progress.questionIndex}
       total={checkpointCards.length}
       speechHint={speechHint}
+      contentKey={gradedKey}
+      gateSpokenKeysRef={gateSpokenKeysRef}
       onAnswer={onAnswer}
       onExit={onExit}
     />
@@ -221,27 +261,76 @@ function phaseLabel(phase: LessonPhase): string {
   return 'Nghe và chọn'
 }
 
+function usePromptSpeech(
+  parts: SpeakPart[],
+  contentKey: string,
+  gateSpokenKeysRef: MutableRefObject<Set<string>>,
+) {
+  useEffect(() => {
+    // Câu đầu đã được đọc trong gesture "Chạm để nghe" — không cắt tiếng đó.
+    if (gateSpokenKeysRef.current.has(contentKey)) {
+      return
+    }
+    const timer = window.setTimeout(() => {
+      speakNow(parts)
+    }, 200)
+    return () => {
+      window.clearTimeout(timer)
+      stopSpeaking()
+    }
+    // parts are derived from contentKey for this step instance
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contentKey])
+}
+
+function useFinishTimer() {
+  const timerRef = useRef<number | null>(null)
+  useEffect(() => {
+    return () => {
+      if (timerRef.current !== null) {
+        window.clearTimeout(timerRef.current)
+      }
+    }
+  }, [])
+
+  return (parts: SpeakPart[], onDone: () => void, minimumMs = 1100) => {
+    if (timerRef.current !== null) {
+      window.clearTimeout(timerRef.current)
+    }
+    const wait = Math.max(minimumMs, estimateSpeechMs(parts) + 250)
+    timerRef.current = window.setTimeout(onDone, wait)
+  }
+}
+
 function FlashcardStep({
   topicName,
   card,
-  nextCard,
   checkpoint,
   index,
   total,
   speechHint,
+  contentKey,
+  gateSpokenKeysRef,
   onNext,
   onExit,
 }: {
   topicName: string
   card: LessonCard
-  nextCard?: LessonCard
   checkpoint: number
   index: number
   total: number
   speechHint: string | null
+  contentKey: string
+  gateSpokenKeysRef: MutableRefObject<Set<string>>
   onNext: () => void
   onExit: () => void
 }) {
+  usePromptSpeech(
+    [{ text: card.word, lang: 'en' }],
+    contentKey,
+    gateSpokenKeysRef,
+  )
+
   return (
     <main className="app-shell lesson-screen">
       <LessonHeader
@@ -280,12 +369,7 @@ function FlashcardStep({
         className="primary-button"
         type="button"
         onClick={() => {
-          if (nextCard) {
-            speakNow({ text: nextCard.word, lang: 'en' })
-            onNext()
-            return
-          }
-          // Chặng mới sẽ có màn chạm-để-nghe (tiếng Việt hướng dẫn).
+          stopSpeaking()
           onNext()
         }}
       >
@@ -299,22 +383,24 @@ function ListenChooseStep({
   topicName,
   allCards,
   target,
-  nextTarget,
   checkpoint,
   index,
   total,
   speechHint,
+  contentKey,
+  gateSpokenKeysRef,
   onAnswer,
   onExit,
 }: {
   topicName: string
   allCards: LessonCard[]
   target: LessonCard
-  nextTarget?: LessonCard
   checkpoint: number
   index: number
   total: number
   speechHint: string | null
+  contentKey: string
+  gateSpokenKeysRef: MutableRefObject<Set<string>>
   onAnswer: (payload: {
     firstTry: boolean
     correct: boolean
@@ -327,64 +413,69 @@ function ListenChooseStep({
   const [attempts, setAttempts] = useState(0)
   const [revealed, setRevealed] = useState(false)
   const [feedback, setFeedback] = useState('')
+  const [locked, setLocked] = useState(false)
+  const finishAfterSpeech = useFinishTimer()
   const question = useMemo(
     () => buildChoiceQuestion(allCards, target),
     [allCards, target],
   )
 
-  function finish(payload: {
-    firstTry: boolean
-    correct: boolean
-    revealed: boolean
-    cardId: string
-  }) {
-    window.setTimeout(() => onAnswer(payload), payload.revealed ? 1500 : 1200)
-  }
-
-  function speakFollowUp(base: SpeakPart[]) {
-    if (nextTarget) {
-      speakNow([...base, { text: nextTarget.word, lang: 'en' }])
-      return
-    }
-    speakNow(base)
-  }
+  usePromptSpeech(
+    [{ text: target.word, lang: 'en' }],
+    contentKey,
+    gateSpokenKeysRef,
+  )
 
   function handleChoose(cardId: string) {
-    if (revealed) return
+    if (revealed || locked) return
     const correct = cardId === target.id
     const nextAttempts = attempts + 1
     setSelectedId(cardId)
     setAttempts(nextAttempts)
 
     if (correct) {
-      setFeedback(FEEDBACK_VOICE.correct)
-      speakFollowUp([
+      const parts: SpeakPart[] = [
         { text: FEEDBACK_VOICE.correct, lang: 'en' },
         { text: target.word, lang: 'en' },
-      ])
-      finish({
-        firstTry: nextAttempts === 1,
-        correct: true,
-        revealed: false,
-        cardId: target.id,
+      ]
+      setFeedback(FEEDBACK_VOICE.correct)
+      setLocked(true)
+      speakNow(parts)
+      finishAfterSpeech(parts, () => {
+        stopSpeaking()
+        onAnswer({
+          firstTry: nextAttempts === 1,
+          correct: true,
+          revealed: false,
+          cardId: target.id,
+        })
       })
       return
     }
 
     if (nextAttempts >= 2) {
-      setRevealed(true)
       const revealText = FEEDBACK_VOICE.reveal(target.word)
-      setFeedback(revealText)
-      speakFollowUp([
+      const parts: SpeakPart[] = [
         { text: revealText, lang: 'en' },
         { text: target.word, lang: 'en' },
-      ])
-      finish({
-        firstTry: false,
-        correct: false,
-        revealed: true,
-        cardId: target.id,
-      })
+      ]
+      setRevealed(true)
+      setFeedback(revealText)
+      setLocked(true)
+      speakNow(parts)
+      finishAfterSpeech(
+        parts,
+        () => {
+          stopSpeaking()
+          onAnswer({
+            firstTry: false,
+            correct: false,
+            revealed: true,
+            cardId: target.id,
+          })
+        },
+        1400,
+      )
       return
     }
 
@@ -430,7 +521,7 @@ function ListenChooseStep({
                 className={`choice-card ${stateClass}`}
                 type="button"
                 onClick={() => handleChoose(choice.id)}
-                disabled={revealed}
+                disabled={revealed || locked}
               >
                 <CardVisual card={choice} size="choice" />
                 <strong>{choice.word}</strong>
@@ -447,22 +538,24 @@ function ChooseWordStep({
   topicName,
   allCards,
   target,
-  nextTarget,
   checkpoint,
   index,
   total,
   speechHint,
+  contentKey,
+  gateSpokenKeysRef,
   onAnswer,
   onExit,
 }: {
   topicName: string
   allCards: LessonCard[]
   target: LessonCard
-  nextTarget?: LessonCard
   checkpoint: number
   index: number
   total: number
   speechHint: string | null
+  contentKey: string
+  gateSpokenKeysRef: MutableRefObject<Set<string>>
   onAnswer: (payload: {
     firstTry: boolean
     correct: boolean
@@ -475,59 +568,69 @@ function ChooseWordStep({
   const [attempts, setAttempts] = useState(0)
   const [revealed, setRevealed] = useState(false)
   const [feedback, setFeedback] = useState('')
+  const [locked, setLocked] = useState(false)
+  const finishAfterSpeech = useFinishTimer()
   const question = useMemo(
     () => buildWordChoiceQuestion(allCards, target),
     [allCards, target],
   )
 
-  function speakFollowUp(base: SpeakPart[]) {
-    if (nextTarget) {
-      speakNow([...base, { text: nextTarget.word, lang: 'en' }])
-      return
-    }
-    speakNow(base)
-  }
+  usePromptSpeech(
+    [{ text: target.word, lang: 'en' }],
+    contentKey,
+    gateSpokenKeysRef,
+  )
 
   function handleChoose(word: string) {
-    if (revealed) return
+    if (revealed || locked) return
     const correct = word === target.word
     const nextAttempts = attempts + 1
     setSelected(word)
     setAttempts(nextAttempts)
 
     if (correct) {
-      setFeedback(FEEDBACK_VOICE.correct)
-      speakFollowUp([
+      const parts: SpeakPart[] = [
         { text: FEEDBACK_VOICE.correct, lang: 'en' },
         { text: target.word, lang: 'en' },
-      ])
-      window.setTimeout(() => {
+      ]
+      setFeedback(FEEDBACK_VOICE.correct)
+      setLocked(true)
+      speakNow(parts)
+      finishAfterSpeech(parts, () => {
+        stopSpeaking()
         onAnswer({
           firstTry: nextAttempts === 1,
           correct: true,
           revealed: false,
           cardId: target.id,
         })
-      }, 1200)
+      })
       return
     }
 
     if (nextAttempts >= 2) {
-      setRevealed(true)
       const revealText = FEEDBACK_VOICE.reveal(target.word)
-      setFeedback(revealText)
-      speakFollowUp([
+      const parts: SpeakPart[] = [
         { text: revealText, lang: 'en' },
         { text: target.word, lang: 'en' },
-      ])
-      window.setTimeout(() => {
-        onAnswer({
-          firstTry: false,
-          correct: false,
-          revealed: true,
-          cardId: target.id,
-        })
-      }, 1500)
+      ]
+      setRevealed(true)
+      setFeedback(revealText)
+      setLocked(true)
+      speakNow(parts)
+      finishAfterSpeech(
+        parts,
+        () => {
+          stopSpeaking()
+          onAnswer({
+            firstTry: false,
+            correct: false,
+            revealed: true,
+            cardId: target.id,
+          })
+        },
+        1400,
+      )
       return
     }
 
@@ -571,7 +674,7 @@ function ChooseWordStep({
                 key={word}
                 className={`word-choice ${stateClass}`}
                 type="button"
-                disabled={revealed}
+                disabled={revealed || locked}
                 onClick={() => handleChoose(word)}
               >
                 {word}
@@ -587,21 +690,23 @@ function ChooseWordStep({
 function YesNoStep({
   topicName,
   target,
-  nextTarget,
   checkpoint,
   index,
   total,
   speechHint,
+  contentKey,
+  gateSpokenKeysRef,
   onAnswer,
   onExit,
 }: {
   topicName: string
   target: LessonCard
-  nextTarget?: LessonCard
   checkpoint: number
   index: number
   total: number
   speechHint: string | null
+  contentKey: string
+  gateSpokenKeysRef: MutableRefObject<Set<string>>
   onAnswer: (payload: {
     firstTry: boolean
     correct: boolean
@@ -613,15 +718,24 @@ function YesNoStep({
   const question = useMemo(() => buildYesNoQuestion(target), [target])
   const [selected, setSelected] = useState<'yes' | 'no' | null>(null)
   const [feedback, setFeedback] = useState('')
+  const [locked, setLocked] = useState(false)
+  const finishAfterSpeech = useFinishTimer()
+
+  usePromptSpeech(
+    [{ text: question.prompt, lang: 'en' }],
+    contentKey,
+    gateSpokenKeysRef,
+  )
 
   function handleChoose(value: 'yes' | 'no') {
-    if (selected) return
+    if (selected || locked) return
     setSelected(value)
+    setLocked(true)
     const correct =
       (value === 'yes' && question.answerIsYes) ||
       (value === 'no' && !question.answerIsYes)
     const answerLabel = question.answerIsYes ? 'Yes' : 'No'
-    const base: SpeakPart[] = correct
+    const parts: SpeakPart[] = correct
       ? [
           { text: FEEDBACK_VOICE.correct, lang: 'en' },
           { text: answerLabel, lang: 'en' },
@@ -630,23 +744,23 @@ function YesNoStep({
           { text: FEEDBACK_VOICE.wrongYesNo(answerLabel), lang: 'en' },
           { text: answerLabel, lang: 'en' },
         ]
-    setFeedback(correct ? FEEDBACK_VOICE.correct : FEEDBACK_VOICE.wrongYesNo(answerLabel))
-    if (nextTarget) {
-      speakNow([
-        ...base,
-        { text: buildYesNoQuestion(nextTarget).prompt, lang: 'en' },
-      ])
-    } else {
-      speakNow(base)
-    }
-    window.setTimeout(() => {
-      onAnswer({
-        firstTry: true,
-        correct,
-        revealed: !correct,
-        cardId: target.id,
-      })
-    }, correct ? 1200 : 1500)
+    setFeedback(
+      correct ? FEEDBACK_VOICE.correct : FEEDBACK_VOICE.wrongYesNo(answerLabel),
+    )
+    speakNow(parts)
+    finishAfterSpeech(
+      parts,
+      () => {
+        stopSpeaking()
+        onAnswer({
+          firstTry: true,
+          correct,
+          revealed: !correct,
+          cardId: target.id,
+        })
+      },
+      correct ? 1100 : 1400,
+    )
   }
 
   return (

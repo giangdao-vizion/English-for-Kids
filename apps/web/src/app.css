@@ -737,18 +737,38 @@
   line-height: 1;
 }
 
-.animal-hero.photo,
+/* Ảnh flashcard thật: giữ tỉ lệ gốc, không ép hình vuông / crop. */
+.animal-hero.photo {
+  aspect-ratio: auto;
+  width: min(100%, 300px);
+  max-height: min(46vh, 340px);
+  height: auto;
+  overflow: hidden;
+  padding: 0;
+  background: #f3f5fb;
+  place-items: center;
+}
+
+.animal-hero.photo img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: min(46vh, 340px);
+  object-fit: contain;
+  margin: 0 auto;
+}
+
 .choice-emoji.photo {
   overflow: hidden;
   padding: 0;
   background: #eef1f8;
 }
 
-.animal-hero.photo img,
 .choice-emoji.photo img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   display: block;
 }
 

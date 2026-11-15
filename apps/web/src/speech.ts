@@ -141,6 +141,8 @@ function buildUtterance(part: SpeakPart): SpeechSynthesisUtterance {
   return utterance
 }
 
+let speakGeneration = 0
+
 /** Đọc ngay — ưu tiên gọi từ click/touch. */
 export function speakNow(parts: SpeakPart[] | SpeakPart): void {
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
@@ -155,6 +157,7 @@ export function speakNow(parts: SpeakPart[] | SpeakPart): void {
 
   unlockSpeech(list[0].text)
   clearSpeakTimers()
+  const generation = ++speakGeneration
   try {
     window.speechSynthesis.cancel()
   } catch {
@@ -168,22 +171,27 @@ export function speakNow(parts: SpeakPart[] | SpeakPart): void {
 
   let index = 0
   const playNext = () => {
+    if (generation !== speakGeneration) {
+      return
+    }
     if (index >= list.length) {
       return
     }
     const utterance = buildUtterance(list[index])
     index += 1
     utterance.onend = () => {
-      queueTimer = window.setTimeout(playNext, isIOS() ? 40 : 20)
+      if (generation !== speakGeneration) return
+      queueTimer = window.setTimeout(playNext, isIOS() ? 60 : 30)
     }
     utterance.onerror = () => {
-      queueTimer = window.setTimeout(playNext, 20)
+      if (generation !== speakGeneration) return
+      queueTimer = window.setTimeout(playNext, 40)
     }
     window.speechSynthesis.speak(utterance)
   }
 
-  // Trong gesture: chạy gần như ngay; ngoài gesture vẫn cố sau delay ngắn trên iOS.
-  playNext()
+  // iOS thường nuốt utterance nếu speak ngay sau cancel — chờ một nhịp.
+  speakTimer = window.setTimeout(playNext, isIOS() ? 140 : 40)
 }
 
 export function speakEnglish(text: string, rate = 0.85): void {
@@ -226,12 +234,21 @@ export function stopSpeaking(): void {
   if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
     return
   }
+  speakGeneration += 1
   clearSpeakTimers()
   try {
     window.speechSynthesis.cancel()
   } catch {
     // ignore
   }
+}
+
+/** Ước lượng thời gian đọc (ms) để chờ feedback xong trước khi sang câu. */
+export function estimateSpeechMs(parts: SpeakPart[] | SpeakPart): number {
+  const list = Array.isArray(parts) ? parts : [parts]
+  const chars = list.reduce((sum, part) => sum + part.text.trim().length, 0)
+  const gaps = Math.max(0, list.length - 1) * 120
+  return Math.min(5000, Math.max(900, Math.round(chars * 70 + gaps + 400)))
 }
 
 export function getSpeechSupportMessage(): string | null {
